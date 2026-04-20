@@ -401,7 +401,6 @@ function warteRaumBeobachten() {
     }
     if (daten.gestartet && document.getElementById('warte-screen').style.display!='none') {
       spielstand=daten; anzeigeSpielerId=meinId; ichHabeEingetragen=false; letzteRundenNr=daten.runde||1;
-      speichereSession();
       zeigeSpielScreen();
     }
   });
