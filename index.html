@@ -315,7 +315,14 @@ let meinName='', meinId='', raumCode='', soloModus=false, istGastgeber=false;
 
 // Session im Browser speichern damit Reload kein Problem ist
 function speichereSession() {
-  if (soloModus || !raumCode) return;
+  if (soloModus) {
+    // Solo: kompletten Spielstand speichern
+    localStorage.setItem('kniffel_session', JSON.stringify({
+      solo: true, meinName, spielstand
+    }));
+    return;
+  }
+  if (!raumCode) return;
   localStorage.setItem('kniffel_session', JSON.stringify({meinName, meinId, raumCode, istGastgeber}));
 }
 function loescheSession() {
@@ -326,6 +333,16 @@ async function pruefeGespeicherteSession() {
     const raw = localStorage.getItem('kniffel_session');
     if (!raw) return false;
     const sess = JSON.parse(raw);
+    // Solo wiederherstellen
+    if (sess.solo) {
+      if (!sess.spielstand || sess.spielstand.beendet) { loescheSession(); return false; }
+      meinName=sess.meinName; meinId='solo'; soloModus=true; raumCode='';
+      spielstand=sess.spielstand; anzeigeSpielerId='solo';
+      ichHabeEingetragen=false; letzteRundenNr=spielstand.runde||1;
+      document.getElementById('modus-subtitle').textContent='Einzelspieler';
+      zeigeSpielScreen();
+      return true;
+    }
     // Prüfen ob Raum noch existiert
     const snap = await get(ref(db,'raeume/'+sess.raumCode));
     if (!snap.exists()) { loescheSession(); return false; }
@@ -532,6 +549,7 @@ window.rundeWeiter = function() {
   rundenAuswertungAktiv=false;
   document.getElementById('runden-screen').style.display='none';
   document.getElementById('spiel-screen').style.display='block';
+  speichereSession();
   if (spielstand?.beendet) {
     aktualisiereSpielUI();
     zeigeSpielEnde();
@@ -688,6 +706,7 @@ window.eintragen = async function(reihe, spalte) {
 
   ichHabeEingetragen=true;
   setMeldung('Eingetragen: '+wert+' Punkte','ok');
+  speichereSession();
 
   if(!soloModus){
     await update(ref(db,'raeume/'+raumCode),{
