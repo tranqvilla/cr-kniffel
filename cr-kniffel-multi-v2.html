@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CR-Kniffel</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;700&display=swap');
+
+  :root {
+    --rot: #993333;
+    --dunkelrot: #6b1f1f;
+    --hell: #f5f0e8;
+    --dunkel: #1a1a1a;
+    --grau: #787878;
+    --gold: #c9a84c;
+    --gruen: #4a7c59;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--dunkel);
+    color: var(--hell);
+    font-family: 'IBM Plex Mono', monospace;
+    min-height: 100vh;
+    padding: 12px;
+  }
+
+  h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(2rem, 8vw, 4rem);
+    color: var(--rot);
+    letter-spacing: 4px;
+    text-align: center;
+    margin-bottom: 4px;
+  }
+
+  .subtitle {
+    text-align: center;
+    font-size: 0.65rem;
+    color: var(--grau);
+    letter-spacing: 2px;
+    margin-bottom: 16px;
+    text-transform: uppercase;
+  }
+
+  /* LOGIN */
+  #login-screen {
+    max-width: 400px;
+    margin: 40px auto;
+    background: #111;
+    border: 1px solid #333;
+    border-radius: 12px;
+    padding: 24px;
+  }
+
+  .login-titel { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; color: var(--gold); letter-spacing: 2px; margin-bottom: 20px; text-align: center; }
+  .login-gruppe { margin-bottom: 16px; }
+  .login-label { font-size: 0.6rem; color: var(--grau); letter-spacing: 2px; text-transform: uppercase; display: block; margin-bottom: 6px; }
+  .login-input { width: 100%; background: #1a1a1a; border: 1px solid #444; border-radius: 4px; color: var(--hell); font-family: 'IBM Plex Mono', monospace; font-size: 1rem; padding: 10px 12px; text-transform: uppercase; letter-spacing: 2px; }
+  .login-input:focus { outline: none; border-color: var(--gold); }
+  .login-trenner { text-align: center; color: var(--grau); font-size: 0.65rem; margin: 16px 0; letter-spacing: 2px; }
+
+  .btn { font-family: 'IBM Plex Mono', monospace; font-weight: 700; font-size: 0.8rem; letter-spacing: 1px; text-transform: uppercase; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; transition: all 0.15s; width: 100%; }
+  .btn-primary { background: var(--rot); color: white; font-size: 1rem; padding: 12px; margin-bottom: 8px; }
+  .btn-primary:hover { background: var(--dunkelrot); }
+  .btn-primary:disabled { background: #444; cursor: not-allowed; color: #666; }
+  .btn-secondary { background: transparent; color: var(--grau); border: 1px solid #444; margin-bottom: 8px; }
+  .btn-secondary:hover { border-color: var(--rot); color: var(--hell); }
+  .btn-wuerfeln { background: var(--rot); color: white; font-size: 1rem; padding: 12px 28px; width: auto; }
+  .btn-wuerfeln:hover { background: var(--dunkelrot); }
+  .btn-wuerfeln:disabled { background: #444; cursor: not-allowed; color: #666; }
+  .btn-klein { background: transparent; color: var(--grau); border: 1px solid #444; width: auto; padding: 8px 16px; font-size: 0.7rem; }
+  .btn-klein:hover { border-color: var(--rot); color: var(--hell); }
+
+  /* WARTE */
+  #warte-screen { display: none; max-width: 400px; margin: 40px auto; background: #111; border: 1px solid #333; border-radius: 12px; padding: 24px; text-align: center; }
+  .raum-code { font-family: 'Bebas Neue', sans-serif; font-size: 3rem; color: var(--gold); letter-spacing: 8px; margin: 12px 0; }
+  .raum-info { font-size: 0.65rem; color: var(--grau); letter-spacing: 1px; margin-bottom: 12px; }
+  .spieler-liste { list-style: none; margin: 16px 0; }
+  .spieler-liste li { padding: 8px 12px; background: #1a1a1a; border-radius: 4px; margin-bottom: 6px; font-size: 0.8rem; display: flex; align-items: center; gap: 8px; }
+  .spieler-liste li.ich { border-left: 3px solid var(--gold); }
+  .spieler-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gruen); flex-shrink: 0; }
+
+  /* RUNDEN-AUSWERTUNG */
+  #runden-screen { display: none; max-width: 440px; margin: 20px auto; }
+  .runden-box { background: linear-gradient(135deg, #1a1200, #0d0d0d); border: 2px solid var(--gold); border-radius: 12px; padding: 20px; text-align: center; }
+  .runden-titel { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; color: var(--gold); letter-spacing: 3px; margin-bottom: 4px; }
+  .runden-untertitel { font-size: 0.6rem; color: var(--grau); letter-spacing: 2px; margin-bottom: 16px; }
+  .runden-zug { background: #1a1a1a; border-radius: 6px; padding: 8px 12px; margin-bottom: 6px; text-align: left; font-size: 0.75rem; overflow: hidden; }
+  .runden-zug-name { color: var(--gold); font-weight: 700; }
+  .runden-zug-info { color: var(--grau); font-size: 0.65rem; }
+  .runden-zug-punkte { float: right; font-weight: 700; font-size: 1rem; }
+  .gut { color: var(--gruen); } .schlecht { color: var(--rot); } .super { color: var(--gold); font-size: 1.2rem; }
+  .runden-ranking { border-top: 1px solid #333; padding-top: 12px; margin-top: 12px; }
+  .ranking-titel { font-size: 0.6rem; color: var(--grau); letter-spacing: 2px; margin-bottom: 8px; }
+  .ranking-zeile { display: flex; align-items: center; justify-content: space-between; padding: 5px 0; font-size: 0.8rem; }
+  .ranking-zeile.erster { color: var(--gold); }
+  .ranking-platz { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; width: 28px; }
+  .ranking-name { flex: 1; text-align: left; padding-left: 6px; }
+  .ranking-punkte { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; }
+
+  /* SPIEL */
+  #spiel-screen { display: none; }
+
+  .status-banner { border-radius: 8px; padding: 8px 14px; margin-bottom: 10px; font-size: 0.7rem; letter-spacing: 1px; text-align: center; font-weight: 700; }
+  .status-banner.aktiv { background: #1a2a1a; border: 1px solid var(--gruen); color: #6aaa7a; }
+  .status-banner.warte { background: #1a1a2a; border: 1px solid #444; color: var(--grau); }
+  .status-banner.eingetragen { background: #111; border: 1px solid #336633; color: #6aaa7a; }
+
+  .spieler-tabs { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
+  .spieler-tab { font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem; padding: 5px 10px; border-radius: 4px; border: 1px solid #333; background: #111; color: var(--grau); cursor: pointer; letter-spacing: 1px; text-transform: uppercase; }
+  .spieler-tab.aktiv { border-color: var(--gold); color: var(--gold); background: #1a1500; }
+  .spieler-tab.fertig { border-color: var(--gruen); color: #6aaa7a; }
+
+  .punkte-banner { background: #111; border: 1px solid var(--rot); border-radius: 8px; padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+  .punkte-label { font-size: 0.65rem; color: var(--grau); letter-spacing: 2px; text-transform: uppercase; }
+  .punkte-zahl { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; color: var(--gold); letter-spacing: 2px; }
+  .spalten-punkte { display: flex; gap: 12px; flex-wrap: wrap; }
+  .spalten-punkt { text-align: center; }
+  .spalten-punkt-label { font-size: 0.55rem; color: var(--grau); display: block; }
+  .spalten-punkt-wert { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; }
+  .sp0 { color: var(--grau); } .sp1 { color: #6aaa7a; } .sp2 { color: #6a7aaa; } .sp3 { color: #aa6a6a; }
+
+  .wuerfel-bereich { background: #111; border: 1px solid #333; border-radius: 8px; padding: 12px; margin-bottom: 12px; transition: opacity 0.3s; }
+  .wuerfel-reihe { display: flex; gap: 8px; justify-content: center; margin-bottom: 10px; flex-wrap: wrap; }
+  .wuerfel-wrapper { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .wuerfel { width: 52px; height: 52px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.15s; border: 3px solid transparent; user-select: none; }
+  .wuerfel.animiert { animation: shake 0.3s ease; }
+  @keyframes shake { 0%,100%{transform:rotate(0deg);} 25%{transform:rotate(-15deg) scale(1.1);} 75%{transform:rotate(15deg) scale(1.1);} }
+  .wuerfel-label { font-size: 0.55rem; color: var(--grau); text-transform: uppercase; letter-spacing: 1px; }
+  .wuerfel-label.festgehalten-label { color: var(--gold); }
+  .steuerung { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; }
+  .wurf-anzeige { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; color: var(--gold); letter-spacing: 2px; min-width: 80px; text-align: center; }
+  .meldung { text-align: center; font-size: 0.7rem; color: var(--grau); margin-top: 8px; min-height: 20px; letter-spacing: 1px; }
+  .meldung.fehler { color: var(--rot); }
+  .meldung.ok { color: var(--gruen); }
+
+  /* SPIELFELD – helles Theme */
+  .spielfeld-container { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 8px; border: 1px solid #ccc; margin-top: 8px; }
+  table.kniffel { width: 100%; border-collapse: collapse; font-size: clamp(0.6rem, 2vw, 0.75rem); min-width: 320px; background: #f0ece0; }
+  .kniffel th { background: var(--rot); color: white; padding: 6px 4px; text-align: center; font-family: 'Bebas Neue', sans-serif; font-size: clamp(0.75rem, 2.5vw, 1rem); letter-spacing: 1px; position: sticky; top: 0; }
+  .kniffel td { padding: 4px; border-bottom: 1px solid #ddd; vertical-align: middle; }
+  .kniffel td.kategorie { color: #2a2a2a; font-size: clamp(0.58rem, 1.8vw, 0.72rem); padding-left: 8px; white-space: nowrap; font-weight: 700; }
+  .kniffel td.feld { text-align: center; width: 56px; min-width: 48px; }
+  .feld-wert { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 32px; border-radius: 4px; border: 1px solid #ccc; background: white; font-weight: 700; font-size: 0.75rem; transition: all 0.15s; color: #bbb; }
+  .feld-wert.besetzt { border-color: #bbb; background: #f8f5ee; color: #2a2a2a; }
+  .feld-wert.positiv { color: var(--gruen); }
+  .feld-wert.negativ { color: var(--rot); }
+  .feld-wert.klickbar { border-color: var(--gold); background: #fff8e0; color: #997700; cursor: pointer; animation: pulse 1s infinite; }
+  .feld-wert.klickbar:hover { background: var(--gold); color: white; transform: scale(1.1); }
+  @keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(201,168,76,0.5);} 50%{box-shadow:0 0 0 4px rgba(201,168,76,0);} }
+  .feld-wert.gesperrt { border-color: #e0e0e0; background: #f5f5f5; color: #ccc; }
+  tr.trenner td { background: #e8e4d8; padding: 2px 8px; font-size: 0.6rem; color: #888; letter-spacing: 1px; }
+  tr.summen-zeile td { background: #ede9dd; font-weight: 700; font-size: 0.68rem; padding: 5px 4px; }
+  tr.summen-zeile td.kategorie { color: #888; font-size: 0.6rem; }
+  .th-0 { background: #777 !important; } .th-1 { background: #4a7c59 !important; } .th-2 { background: #4a5c7c !important; } .th-3 { background: var(--rot) !important; }
+
+  .spielende-banner { display: none; background: linear-gradient(135deg, var(--dunkelrot), #2a1a00); border: 2px solid var(--gold); border-radius: 8px; padding: 20px; text-align: center; margin-bottom: 12px; }
+  .spielende-banner.sichtbar { display: block; }
+  .spielende-titel { font-family: 'Bebas Neue', sans-serif; font-size: 2.5rem; color: var(--gold); letter-spacing: 4px; }
+
+  .regeln-toggle { text-align: center; margin-bottom: 10px; margin-top: 8px; }
+  .regeln-toggle button { background: transparent; border: 1px solid #333; color: var(--grau); font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem; padding: 4px 12px; border-radius: 20px; cursor: pointer; letter-spacing: 1px; }
+  .regeln-box { display: none; background: #111; border: 1px solid #333; border-radius: 8px; padding: 12px; font-size: 0.65rem; color: var(--grau); line-height: 1.8; margin-bottom: 12px; }
+  .regeln-box.sichtbar { display: block; }
+  .regeln-box strong { color: var(--hell); }
+
+  .fehler-meldung { color: var(--rot); font-size: 0.7rem; text-align: center; margin-top: 8px; min-height: 20px; }
+</style>
+</head>
+<body>
+
+<h1>CR-KNIFFEL</h1>
+<p class="subtitle" id="modus-subtitle">Crossroads Edition</p>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-titel">🎲 Willkommen</div>
+  <div class="login-gruppe">
+    <label class="login-label">Dein Name</label>
+    <input class="login-input" type="text" id="input-name" placeholder="MAX" maxlength="16">
+  </div>
+  <button class="btn btn-primary" onclick="soloStarten()">▶ Einzelspieler</button>
+  <div class="login-trenner">— oder Mehrspieler —</div>
+  <button class="btn btn-primary" onclick="raumErstellen()">🎲 Neuen Raum erstellen</button>
+  <div class="login-gruppe" style="margin-top:12px">
+    <label class="login-label">Raumcode eingeben</label>
+    <input class="login-input" type="text" id="input-code" placeholder="WOLF42" maxlength="8">
+  </div>
+  <button class="btn btn-secondary" onclick="raumBeitreten()">→ Beitreten</button>
+  <div class="fehler-meldung" id="login-fehler"></div>
+</div>
+
+<!-- WARTERAUM -->
+<div id="warte-screen">
+  <div class="login-titel">Warteraum</div>
+  <div class="raum-info">Teile diesen Code mit deinen Mitspielern:</div>
+  <div class="raum-code" id="anzeige-raumcode">----</div>
+  <div class="raum-info" id="spieler-anzahl-info">1 Spieler verbunden</div>
+  <ul class="spieler-liste" id="warte-spieler-liste"></ul>
+  <button class="btn btn-primary" id="btn-spiel-starten" onclick="spielStarten()" style="display:none">🎲 Spiel starten!</button>
+  <div class="raum-info" id="warte-info">Warte auf Mitspieler...</div>
+  <button class="btn btn-secondary" style="margin-top:12px" onclick="zurueckZumLogin()">← Zurück</button>
+</div>
+
+<!-- RUNDEN-AUSWERTUNG -->
+<div id="runden-screen">
+  <div class="runden-box">
+    <div class="runden-titel">⚡ Runde <span id="runden-nr">1</span></div>
+    <div class="runden-untertitel">AUSWERTUNG</div>
+    <div id="runden-zuege"></div>
+    <div class="runden-ranking">
+      <div class="ranking-titel">▸ GESAMTRANKING</div>
+      <div id="runden-ranking"></div>
+    </div>
+    <button class="btn btn-primary" style="margin-top:16px" id="btn-runde-weiter" onclick="rundeWeiter()">Weiter spielen →</button>
+  </div>
+</div>
+
+<!-- SPIEL -->
+<div id="spiel-screen">
+
+  <div class="spielende-banner" id="spielende">
+    <div class="spielende-titel">🎲 Spiel beendet!</div>
+    <div id="spielende-inhalt" style="margin-top:12px"></div>
+    <button class="btn btn-klein" style="margin-top:12px" onclick="zurueckZumLogin()">Neues Spiel</button>
+  </div>
+
+  <div class="status-banner aktiv" id="status-banner">🎲 Du bist dran!</div>
+  <div class="spieler-tabs" id="spieler-tabs"></div>
+
+  <div class="punkte-banner">
+    <div>
+      <div class="punkte-label" id="punkte-name-label">Punkte</div>
+      <div class="punkte-zahl" id="gesamt-punkte">0</div>
+    </div>
+    <div class="spalten-punkte">
+      <div class="spalten-punkt"><span class="spalten-punkt-label">Frei ×1</span><div class="spalten-punkt-wert sp0" id="sp-punkte-0">0</div></div>
+      <div class="spalten-punkt"><span class="spalten-punkt-label">↓ ×2</span><div class="spalten-punkt-wert sp1" id="sp-punkte-1">0</div></div>
+      <div class="spalten-punkt"><span class="spalten-punkt-label">↑ ×2</span><div class="spalten-punkt-wert sp2" id="sp-punkte-2">0</div></div>
+      <div class="spalten-punkt"><span class="spalten-punkt-label">Hand ×3</span><div class="spalten-punkt-wert sp3" id="sp-punkte-3">0</div></div>
+    </div>
+  </div>
+
+  <div class="wuerfel-bereich" id="wuerfel-bereich">
+    <div class="wuerfel-reihe" id="wuerfel-reihe"></div>
+    <div class="steuerung">
+      <button class="btn btn-klein" onclick="zurueckZumLogin()">✕</button>
+      <button class="btn btn-wuerfeln" id="btn-wuerfeln" onclick="wuerfeln()">🎲 Würfeln</button>
+      <div class="wurf-anzeige" id="wurf-anzeige">— / 3</div>
+    </div>
+    <div class="meldung" id="meldung">Würfeln um zu starten!</div>
+  </div>
+
+  <div class="regeln-toggle"><button onclick="toggleRegeln()">📋 Regeln</button></div>
+  <div class="regeln-box" id="regeln-box">
+    <strong>CR-Kniffel – Die 4 Spalten:</strong><br><br>
+    <strong style="color:var(--grau)">Frei (×1):</strong> Jedes Feld frei eintragbar.<br><br>
+    <strong style="color:#6aaa7a">↓ (×2):</strong> Von oben nach unten, doppelt gewertet.<br><br>
+    <strong style="color:#6a7aaa">↑ (×2):</strong> Von unten nach oben, doppelt gewertet.<br><br>
+    <strong style="color:#aa6a6a">Hand (×3):</strong> Nur erster Wurf zählt, dreifach gewertet.<br><br>
+    <strong>Bonus:</strong> Oberer Teil ≥ 63 Punkte → +35 pro Spalte
+  </div>
+
+  <div class="spielfeld-container">
+    <table class="kniffel">
+      <thead>
+        <tr>
+          <th style="text-align:left;padding-left:8px;background:#555;">Kategorie</th>
+          <th class="th-0">Frei<br><small style="font-size:0.6rem;font-family:'IBM Plex Mono'">×1</small></th>
+          <th class="th-1">↓<br><small style="font-size:0.6rem;font-family:'IBM Plex Mono'">×2</small></th>
+          <th class="th-2">↑<br><small style="font-size:0.6rem;font-family:'IBM Plex Mono'">×2</small></th>
+          <th class="th-3">Hand<br><small style="font-size:0.6rem;font-family:'IBM Plex Mono'">×3</small></th>
+        </tr>
+      </thead>
+      <tbody id="spielfeld-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+import { getDatabase, ref, set, get, onValue, update, remove }
+  from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBMFGpTmo-oZuIwhonLqgT4JFBxQ6jv-7I",
+  authDomain: "cr-kniffel.firebaseapp.com",
+  databaseURL: "https://cr-kniffel-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "cr-kniffel",
+  storageBucket: "cr-kniffel.firebasestorage.app",
+  messagingSenderId: "948872204948",
+  appId: "1:948872204948:web:20fabf92b6a7181b581a81"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+const KATEGORIEN = [
+  {id:0,name:'Einser',typ:'zahlen'},{id:1,name:'Zweier',typ:'zahlen'},
+  {id:2,name:'Dreier',typ:'zahlen'},{id:3,name:'Vierer',typ:'zahlen'},
+  {id:4,name:'Fünfer',typ:'zahlen'},{id:5,name:'Sechser',typ:'zahlen'},
+  {id:6,name:'Dreierpasch',typ:'pasch',param:3},{id:7,name:'Viererpasch',typ:'pasch',param:4},
+  {id:8,name:'Full House',typ:'full'},{id:9,name:'Kl. Straße',typ:'strasse',param:4},
+  {id:10,name:'Gr. Straße',typ:'strasse',param:5},{id:11,name:'Kniffel',typ:'pasch',param:5},
+  {id:12,name:'Chance',typ:'chance'},
+];
+const SPALTEN_NAMEN = ['Frei','↓','↑','Hand'];
+
+let meinName='', meinId='', raumCode='', soloModus=false, istGastgeber=false;
+let spielstand=null, anzeigeSpielerId='', hoererAbmelden=null;
+let wurf=[0,0,0,0,0], festgehalten=[false,false,false,false,false], wurfZaehler=0;
+let ichHabeEingetragen=false;
+let letzteRundenNr=0;
+let rundenAuswertungAktiv=false;
+
+// ============================================================
+// SOLO
+// ============================================================
+window.soloStarten = function() {
+  const name = document.getElementById('input-name').value.trim().toUpperCase() || 'SPIELER';
+  meinName=name; meinId='solo'; soloModus=true; raumCode='';
+  spielstand = { spieler:{solo:{name:meinName,ergebnisse:{}}}, runde:1, gestartet:true, beendet:false, rundenZuege:{} };
+  anzeigeSpielerId='solo'; ichHabeEingetragen=false; letzteRundenNr=1;
+  document.getElementById('modus-subtitle').textContent='Einzelspieler';
+  zeigeSpielScreen();
+};
+
+// ============================================================
+// MULTIPLAYER
+// ============================================================
+window.raumErstellen = async function() {
+  const name = document.getElementById('input-name').value.trim().toUpperCase();
+  if (!name) { zeigeLoginFehler('Bitte Namen eingeben!'); return; }
+  meinName=name; meinId='p_'+Date.now(); istGastgeber=true; soloModus=false;
+  raumCode = generiereCode();
+  // Alte Räume (>24h) aufräumen
+  await raeumeBereinigen();
+  await set(ref(db,'raeume/'+raumCode), {
+    erstellt:Date.now(), gestartet:false, beendet:false, runde:1, rundenZuege:{},
+    spieler:{[meinId]:{name:meinName,ergebnisse:{}}}, reihenfolge:[meinId],
+  });
+  document.getElementById('anzeige-raumcode').textContent=raumCode;
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('warte-screen').style.display='block';
+  document.getElementById('btn-spiel-starten').style.display='block';
+  document.getElementById('modus-subtitle').textContent='Mehrspieler – '+raumCode;
+  warteRaumBeobachten();
+};
+
+window.raumBeitreten = async function() {
+  const name = document.getElementById('input-name').value.trim().toUpperCase();
+  const code = document.getElementById('input-code').value.trim().toUpperCase();
+  if (!name) { zeigeLoginFehler('Bitte Namen eingeben!'); return; }
+  if (!code) { zeigeLoginFehler('Bitte Raumcode eingeben!'); return; }
+  const snap = await get(ref(db,'raeume/'+code));
+  if (!snap.exists()) { zeigeLoginFehler('Raum nicht gefunden!'); return; }
+  const daten = snap.val();
+  if (daten.gestartet) { zeigeLoginFehler('Spiel läuft schon!'); return; }
+  meinName=name; meinId='p_'+Date.now(); istGastgeber=false; soloModus=false; raumCode=code;
+  const reihenfolge=[...(daten.reihenfolge||[]),meinId];
+  await update(ref(db,'raeume/'+code), { ['spieler/'+meinId]:{name:meinName,ergebnisse:{}}, reihenfolge });
+  document.getElementById('anzeige-raumcode').textContent=raumCode;
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('warte-screen').style.display='block';
+  document.getElementById('modus-subtitle').textContent='Mehrspieler – '+raumCode;
+  warteRaumBeobachten();
+};
+
+function warteRaumBeobachten() {
+  if (hoererAbmelden) hoererAbmelden();
+  hoererAbmelden = onValue(ref(db,'raeume/'+raumCode), snap => {
+    if (!snap.exists()) return;
+    const daten = snap.val();
+    const liste = document.getElementById('warte-spieler-liste');
+    if (liste && document.getElementById('warte-screen').style.display!='none') {
+      liste.innerHTML='';
+      const spieler=daten.spieler||{};
+      document.getElementById('spieler-anzahl-info').textContent=Object.keys(spieler).length+' Spieler verbunden';
+      for (const [id,sp] of Object.entries(spieler)) {
+        const li=document.createElement('li');
+        if(id===meinId)li.classList.add('ich');
+        li.innerHTML=`<span class="spieler-dot"></span>${sp.name}${id===meinId?' (du)':''}`;
+        liste.appendChild(li);
+      }
+    }
+    if (daten.gestartet && document.getElementById('warte-screen').style.display!='none') {
+      spielstand=daten; anzeigeSpielerId=meinId; ichHabeEingetragen=false; letzteRundenNr=daten.runde||1;
+      zeigeSpielScreen();
+    }
+  });
+}
+
+window.spielStarten = async function() {
+  if (!istGastgeber) return;
+  await update(ref(db,'raeume/'+raumCode),{gestartet:true});
+};
+
+// ============================================================
+// SPIEL SCREEN
+// ============================================================
+function zeigeSpielScreen() {
+  ['login-screen','warte-screen','runden-screen'].forEach(id=>document.getElementById(id).style.display='none');
+  document.getElementById('spiel-screen').style.display='block';
+  resetWuerfel();
+  rundenAuswertungAktiv=false;
+
+  if (!soloModus) {
+    if (hoererAbmelden) hoererAbmelden();
+    hoererAbmelden = onValue(ref(db,'raeume/'+raumCode), snap => {
+      if (!snap.exists()) return;
+      const neuerStand = snap.val();
+      const neueRunde = neuerStand.runde||1;
+
+      if (neueRunde > letzteRundenNr && !rundenAuswertungAktiv) {
+        rundenAuswertungAktiv=true;
+        spielstand=neuerStand;
+        const rundeZurAuswertung=letzteRundenNr;
+        letzteRundenNr=neueRunde;
+        ichHabeEingetragen=false;
+        resetWuerfel();
+        zeigeRundenAuswertung(neuerStand, rundeZurAuswertung);
+        return;
+      }
+
+      spielstand=neuerStand;
+      if (!rundenAuswertungAktiv) aktualisiereSpielUI();
+    });
+  } else {
+    aktualisiereSpielUI();
+  }
+}
+
+function resetWuerfel() {
+  wurf=[0,0,0,0,0]; festgehalten=[false,false,false,false,false]; wurfZaehler=0;
+  renderWuerfel();
+}
+
+// ============================================================
+// RUNDEN-AUSWERTUNG
+// ============================================================
+function zeigeRundenAuswertung(stand, rundeNr) {
+  document.getElementById('spiel-screen').style.display='none';
+  document.getElementById('runden-screen').style.display='block';
+  document.getElementById('runden-nr').textContent=rundeNr;
+
+  const zuege = stand.rundenZuege?.[rundeNr]||{};
+  const spieler = stand.spieler||{};
+
+  // Züge
+  const zuegeDiv = document.getElementById('runden-zuege');
+  zuegeDiv.innerHTML='';
+  const zuegeArr = Object.entries(zuege);
+  if (zuegeArr.length===0) {
+    zuegeDiv.innerHTML='<div style="color:var(--grau);font-size:0.7rem;padding:8px 0">Keine Einträge</div>';
+  }
+  for (const [id,zug] of zuegeArr) {
+    const name=spieler[id]?.name||'?';
+    const div=document.createElement('div');
+    div.className='runden-zug';
+    const p=zug.punkte||0;
+    const faktor=zug.spalte===0?1:zug.spalte===3?3:2;
+    const mitFaktor=p*faktor;
+    const istHand=zug.spalte===3;
+    const pk=mitFaktor>=100?'super':(mitFaktor>0?'gut':'schlecht');
+    const kat=KATEGORIEN[zug.reihe]?.name||'?';
+    const sp=SPALTEN_NAMEN[zug.spalte]||'?';
+    const handBadge=istHand?'<span style="background:var(--rot);color:white;font-size:0.6rem;padding:2px 6px;border-radius:10px;margin-left:6px;letter-spacing:1px">HAND ×3</span>':'';
+    div.innerHTML=`<span class="runden-zug-punkte ${pk}">${mitFaktor>0?'+':''}${mitFaktor}</span><span class="runden-zug-name" style="font-size:${istHand?'0.95rem':'0.8rem'};font-weight:${istHand?'900':'700'}">${name}</span>${handBadge}<br><span class="runden-zug-info" style="font-size:${istHand?'0.75rem':'0.65rem'};font-weight:${istHand?'700':'400'}">${kat}${faktor>1?' · <span style="color:var(--gold)">×'+faktor+'</span>':''}${p!==mitFaktor?' = '+p+'×'+faktor:''}</span>`;
+    zuegeDiv.appendChild(div);
+  }
+
+  // Ranking
+  const rankingDiv=document.getElementById('runden-ranking');
+  const liste=Object.entries(spieler).map(([id,sp])=>{
+    const p=[0,1,2,3].reduce((a,s)=>a+berechneSpalte(sp.ergebnisse||{},s),0);
+    return{name:sp.name,punkte:p,ichBin:id===meinId};
+  }).sort((a,b)=>b.punkte-a.punkte);
+  rankingDiv.innerHTML=liste.map((e,i)=>`
+    <div class="ranking-zeile ${i===0?'erster':''}">
+      <span class="ranking-platz">${i===0?'🏆':(i+1)+'.'}</span>
+      <span class="ranking-name">${e.name}${e.ichBin?' (du)':''}</span>
+      <span class="ranking-punkte">${e.punkte}</span>
+    </div>`).join('');
+
+  if (stand.beendet) {
+    document.getElementById('btn-runde-weiter').textContent='🏆 Endauswertung';
+  } else {
+    document.getElementById('btn-runde-weiter').textContent='Weiter spielen →';
+  }
+}
+
+window.rundeWeiter = function() {
+  rundenAuswertungAktiv=false;
+  document.getElementById('runden-screen').style.display='none';
+  document.getElementById('spiel-screen').style.display='block';
+  if (spielstand?.beendet) {
+    aktualisiereSpielUI();
+    zeigeSpielEnde();
+  } else {
+    aktualisiereSpielUI();
+  }
+};
+
+// ============================================================
+// SPIEL UI
+// ============================================================
+function aktualisiereSpielUI() {
+  if (!spielstand||rundenAuswertungAktiv) return;
+  const spieler=spielstand.spieler||{};
+  const runde=spielstand.runde||1;
+  const rundenZuege=spielstand.rundenZuege?.[runde]||{};
+
+  // Status
+  const banner=document.getElementById('status-banner');
+  if (ichHabeEingetragen) {
+    const anzahlFertig=Object.keys(rundenZuege).length;
+    const anzahlGesamt=Object.keys(spieler).length;
+    const noch=anzahlGesamt-anzahlFertig;
+    banner.className='status-banner eingetragen';
+    banner.textContent=noch>0?`✓ Eingetragen – warte auf ${noch} andere...`:'✓ Alle eingetragen!';
+  } else {
+    banner.className='status-banner aktiv';
+    banner.textContent='🎲 Dein Zug!';
+  }
+
+  // Würfel
+  document.getElementById('btn-wuerfeln').disabled=ichHabeEingetragen||wurfZaehler>=3||!!spielstand.beendet;
+  document.getElementById('wuerfel-bereich').style.opacity=ichHabeEingetragen?'0.5':'1';
+
+  // Tabs
+  const tabs=document.getElementById('spieler-tabs');
+  tabs.innerHTML='';
+  for (const [id,sp] of Object.entries(spieler)) {
+    const hatEingetragen=!!rundenZuege[id];
+    const btn=document.createElement('button');
+    btn.className='spieler-tab'+(id===anzeigeSpielerId?' aktiv':'')+(hatEingetragen?' fertig':'');
+    btn.textContent=sp.name+(id===meinId?' (du)':'')+(hatEingetragen?' ✓':'');
+    btn.onclick=()=>{anzeigeSpielerId=id;aktualisiereSpielUI();};
+    tabs.appendChild(btn);
+  }
+
+  document.getElementById('punkte-name-label').textContent=spieler[anzeigeSpielerId]?.name||'';
+  aktualisiereAnzeige();
+  renderSpielfeld(!ichHabeEingetragen && anzeigeSpielerId===meinId);
+  // Fremdes Blatt visuell unterscheiden
+  const container=document.querySelector('.spielfeld-container');
+  if(container){
+    if(anzeigeSpielerId!==meinId){
+      container.style.cssText='overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:8px;border:2px solid #4a5c7c;opacity:0.85;';
+      document.getElementById('punkte-name-label').style.color='#6a7aaa';
+    } else {
+      container.style.cssText='overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:8px;border:1px solid #ccc;';
+      document.getElementById('punkte-name-label').style.color='';
+    }
+  }
+
+  if (spielstand.beendet) zeigeSpielEnde();
+}
+
+// ============================================================
+// WÜRFEL
+// ============================================================
+const WP = {
+  1:[[50,50]],2:[[25,25],[75,75]],3:[[25,25],[50,50],[75,75]],
+  4:[[25,25],[75,25],[25,75],[75,75]],5:[[25,25],[75,25],[50,50],[25,75],[75,75]],
+  6:[[25,25],[75,25],[25,50],[75,50],[25,75],[75,75]],
+};
+
+function wuerfelSVG(z, fest) {
+  if (z===0) return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" width="52" height="52"><rect x="4" y="4" width="92" height="92" rx="14" fill="white" stroke="#ddd" stroke-width="3"/></svg>`;
+  const bg=fest?'#888':'#f5f0e8', dc=fest?'#f5f0e8':'#1a1a1a', bo=fest?'#c9a84c':'#ccc';
+  const dots=(WP[z]||[]).map(([cx,cy])=>`<circle cx="${cx}" cy="${cy}" r="9" fill="${dc}"/>`).join('');
+  return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" width="52" height="52"><rect x="4" y="4" width="92" height="92" rx="14" fill="${bg}" stroke="${bo}" stroke-width="3"/>${dots}</svg>`;
+}
+
+function renderWuerfel() {
+  const reihe=document.getElementById('wuerfel-reihe');
+  reihe.innerHTML='';
+  for (let i=0;i<5;i++) {
+    const wrap=document.createElement('div'); wrap.className='wuerfel-wrapper';
+    const w=document.createElement('div');
+    w.className='wuerfel'+(festgehalten[i]?' festgehalten':'');
+    w.id='wuerfel-'+i;
+    w.style.cssText='background:transparent;border:none;padding:0;';
+    w.innerHTML=wuerfelSVG(wurf[i],festgehalten[i]);
+    if (!ichHabeEingetragen&&wurfZaehler>0&&wurfZaehler<3) {
+      w.onclick=()=>{festgehalten[i]=!festgehalten[i];renderWuerfel();};
+      w.style.cursor='pointer';
+    }
+    const lbl=document.createElement('div');
+    lbl.className='wuerfel-label'+(festgehalten[i]?' festgehalten-label':'');
+    lbl.textContent=!ichHabeEingetragen?(festgehalten[i]?'fest':(wurfZaehler>0?'frei':'')):'';
+    wrap.appendChild(w); wrap.appendChild(lbl); reihe.appendChild(wrap);
+  }
+  document.getElementById('wurf-anzeige').textContent=wurfZaehler>0?wurfZaehler+' / 3':'— / 3';
+}
+
+window.wuerfeln = function() {
+  if (ichHabeEingetragen){setMeldung('Du hast schon eingetragen!','fehler');return;}
+  if (wurfZaehler>=3){setMeldung('Nur 3 Würfe!','fehler');return;}
+  wurfZaehler++;
+  const rndBuf=new Uint8Array(5);
+  crypto.getRandomValues(rndBuf);
+  for(let i=0;i<5;i++) if(!festgehalten[i]) wurf[i]=(rndBuf[i]%6)+1;
+  for(let i=0;i<5;i++) if(!festgehalten[i]){
+    const el=document.getElementById('wuerfel-'+i);
+    if(el){el.classList.remove('animiert');void el.offsetWidth;el.classList.add('animiert');}
+  }
+  setMeldung(wurfZaehler>=3?'Letzter Wurf – trag jetzt ein!':'Festhalten und nochmal würfeln.',wurfZaehler>=3?'ok':'');
+  renderWuerfel();
+  renderSpielfeld(anzeigeSpielerId===meinId);
+};
+
+// ============================================================
+// SPIELLOGIK
+// ============================================================
+function berechneWert(typ, param, spalte) {
+  if(wurf[0]===0)return 0;
+  const h=spalte===3&&wurfZaehler>1;
+  switch(typ){
+    case 'zahlen':{if(h)return 0;const z=param+1;return wurf.filter(w=>w===z).length*z;}
+    case 'pasch':{if(h)return 0;const z=[0,0,0,0,0,0,0];wurf.forEach(w=>z[w]++);if(!z.some(c=>c>=param))return 0;return param===5?50:wurf.reduce((a,b)=>a+b,0);}
+    case 'full':{if(h)return 0;const z1=wurf[0];let z2=0;for(let i=0;i<5;i++){if(wurf[i]!==z1){z2=wurf[i];break;}}if(z2===0)return 25;const c1=wurf.filter(w=>w===z1).length,c2=wurf.filter(w=>w===z2).length;return(c1+c2===5&&(c1===2||c1===3))?25:0;}
+    case 'strasse':{if(h)return 0;const a=[0,0,0,0,0,0,0];wurf.forEach(w=>a[w]++);for(let s=1;s<=7-param;s++){let ok=true;for(let k=s;k<s+param;k++)if(!a[k]){ok=false;break;}if(ok)return param===5?40:30;}return 0;}
+    case 'chance':{if(h)return 0;return wurf.reduce((a,b)=>a+b,0);}
+  }
+  return 0;
+}
+
+function getErgebnisse(id){return spielstand?.spieler?.[id]?.ergebnisse||{};}
+
+function istErlaubt(reihe,spalte,erg){
+  if(erg[reihe+'_'+spalte]!==undefined)return false;
+  if(spalte===0||spalte===3)return true;
+  if(spalte===1){if(reihe===0)return true;return erg[(reihe-1)+'_1']!==undefined&&erg[(reihe+1)+'_1']===undefined;}
+  if(spalte===2){if(reihe===12)return true;return erg[(reihe+1)+'_2']!==undefined&&erg[(reihe-1)+'_2']===undefined;}
+  return false;
+}
+
+window.eintragen = async function(reihe, spalte) {
+  if(wurfZaehler===0){setMeldung('Erst würfeln!','fehler');return;}
+  if(ichHabeEingetragen){setMeldung('Schon eingetragen!','fehler');return;}
+  const erg=getErgebnisse(meinId);
+  if(!istErlaubt(reihe,spalte,erg)){setMeldung('Hier nicht erlaubt!','fehler');return;}
+  const kat=KATEGORIEN[reihe];
+  const wert=berechneWert(kat.typ,kat.param!==undefined?kat.param:reihe,spalte);
+  const neueErg={...erg,[reihe+'_'+spalte]:wert};
+  const runde=spielstand.runde||1;
+
+  ichHabeEingetragen=true;
+  setMeldung('Eingetragen: '+wert+' Punkte','ok');
+
+  if(!soloModus){
+    await update(ref(db,'raeume/'+raumCode),{
+      ['spieler/'+meinId+'/ergebnisse']:neueErg,
+      ['rundenZuege/'+runde+'/'+meinId]:{reihe,spalte,punkte:wert},
+    });
+    await pruefeRundeBeendet(neueErg, runde);
+  } else {
+    spielstand.spieler[meinId].ergebnisse=neueErg;
+    spielstand.rundenZuege=spielstand.rundenZuege||{};
+    spielstand.rundenZuege[runde]={[meinId]:{reihe,spalte,punkte:wert}};
+    const gesamtFelder=13*4;
+    const beendet=Object.keys(neueErg).length>=gesamtFelder;
+    spielstand.beendet=beendet;
+    const rundeZurAuswertung=runde;
+    letzteRundenNr=runde+1;
+    spielstand.runde=runde+1;
+    ichHabeEingetragen=false;
+    resetWuerfel();
+    zeigeRundenAuswertung(spielstand, rundeZurAuswertung);
+  }
+
+  renderWuerfel();
+  aktualisiereSpielUI();
+};
+
+async function pruefeRundeBeendet(meineNeueErg, runde) {
+  const snap=await get(ref(db,'raeume/'+raumCode));
+  if(!snap.exists())return;
+  const stand=snap.val();
+  const spieler=stand.spieler||{};
+  const rundenZuege=stand.rundenZuege?.[runde]||{};
+  const anzSpieler=Object.keys(spieler).length;
+  const anzFertig=Object.keys(rundenZuege).length;
+  if(anzFertig<anzSpieler)return;
+
+  const gesamtFelder=13*4;
+  let alleFelder=true;
+  for(const [id,sp] of Object.entries(spieler)){
+    const erg=id===meinId?meineNeueErg:(sp.ergebnisse||{});
+    if(Object.keys(erg).length<gesamtFelder){alleFelder=false;break;}
+  }
+  await update(ref(db,'raeume/'+raumCode),{runde:runde+1,beendet:alleFelder});
+}
+
+// ============================================================
+// SPIELFELD RENDER
+// ============================================================
+function renderSpielfeld(klickbar) {
+  const tbody=document.getElementById('spielfeld-body');
+  tbody.innerHTML='';
+  const erg=getErgebnisse(anzeigeSpielerId);
+
+  const trO=document.createElement('tr');trO.className='trenner';
+  trO.innerHTML='<td colspan="5">▸ OBERER TEIL</td>';tbody.appendChild(trO);
+  for(let r=0;r<=5;r++)tbody.appendChild(erstelleZeile(r,erg,klickbar));
+
+  const trB=document.createElement('tr');trB.className='summen-zeile';
+  trB.innerHTML='<td class="kategorie">Bonus (≥63→+35)</td>'+[0,1,2,3].map(s=>{
+    let diff=0,hat=false;
+    for(let r=0;r<=5;r++){const k=r+'_'+s;if(erg[k]!==undefined){hat=true;diff+=erg[k]-(3*(r+1));}}
+    const oben=berechneOben(erg,s);
+    let txt,col;
+    if(oben>=63){txt='+35 ✓';col='var(--gruen)';}
+    else if(!hat){txt='·';col='#bbb';}
+    else{txt=diff>=0?'+'+diff:''+diff;col=diff>=0?'var(--gruen)':'var(--rot)';}
+    return`<td class="feld"><span style="color:${col};font-size:0.65rem;font-weight:700">${txt}</span></td>`;
+  }).join('');
+  tbody.appendChild(trB);
+
+  const trU=document.createElement('tr');trU.className='trenner';
+  trU.innerHTML='<td colspan="5">▸ UNTERER TEIL</td>';tbody.appendChild(trU);
+  for(let r=6;r<=12;r++)tbody.appendChild(erstelleZeile(r,erg,klickbar));
+}
+
+function erstelleZeile(reihe,erg,klickbar){
+  const tr=document.createElement('tr');
+  const kat=KATEGORIEN[reihe];
+  const tdN=document.createElement('td');tdN.className='kategorie';tdN.textContent=kat.name;tr.appendChild(tdN);
+  for(let spalte=0;spalte<=3;spalte++){
+    const td=document.createElement('td');td.className='feld';
+    const key=reihe+'_'+spalte;
+    const span=document.createElement('span');span.className='feld-wert';
+    if(erg[key]!==undefined){
+      span.classList.add('besetzt');
+      const v=erg[key];
+      if(reihe<=5){const d=v-(3*(reihe+1));span.textContent=d>=0?'+'+d:''+d;span.classList.add(d>=0?'positiv':'negativ');}
+      else{span.textContent=v===0?'X':v;if(v>0)span.classList.add('positiv');}
+    } else if(klickbar&&wurfZaehler>0&&istErlaubt(reihe,spalte,erg)){
+      const v=berechneWert(kat.typ,kat.param!==undefined?kat.param:reihe,spalte);
+      span.classList.add('klickbar');
+      if(reihe<=5){const d=v-(3*(reihe+1));span.textContent=d>=0?'+'+d:''+d;}
+      else{span.textContent=v===0?'0':v;}
+      const r=reihe,s=spalte;
+      span.onclick=()=>eintragen(r,s);
+      span.title='Eintragen: '+v+' Punkte';
+    } else {
+      if(klickbar&&wurfZaehler>0)span.classList.add('gesperrt');
+      span.textContent=klickbar&&wurfZaehler>0?'—':'·';
+    }
+    td.appendChild(span);tr.appendChild(td);
+  }
+  return tr;
+}
+
+// ============================================================
+// PUNKTE
+// ============================================================
+function berechneOben(erg,s){let r=0;for(let i=0;i<=5;i++){const k=i+'_'+s;if(erg[k]!==undefined)r+=erg[k];}return r;}
+function berechneSpalte(erg,s){let o=berechneOben(erg,s);if(o>=63)o+=35;let u=0;for(let r=6;r<=12;r++){const k=r+'_'+s;if(erg[k]!==undefined)u+=erg[k];}return(o+u)*(s===0?1:s===3?3:2);}
+
+function aktualisiereAnzeige(){
+  const erg=getErgebnisse(anzeigeSpielerId);
+  let g=0;
+  for(let s=0;s<=3;s++){const p=berechneSpalte(erg,s);g+=p;document.getElementById('sp-punkte-'+s).textContent=p;}
+  document.getElementById('gesamt-punkte').textContent=g;
+}
+
+function zeigeSpielEnde(){
+  document.getElementById('spielende').classList.add('sichtbar');
+  const sp=spielstand?.spieler||{};
+  const liste=Object.entries(sp).map(([id,s])=>{
+    const p=[0,1,2,3].reduce((a,col)=>a+berechneSpalte(s.ergebnisse||{},col),0);
+    return{name:s.name,punkte:p,ich:id===meinId};
+  }).sort((a,b)=>b.punkte-a.punkte);
+  document.getElementById('spielende-inhalt').innerHTML=liste.map((e,i)=>
+    `<div style="padding:4px 0;font-size:0.85rem;color:${i===0?'var(--gold)':'var(--hell)'}">
+      ${i===0?'🏆':''} ${e.name}${e.ich?' (du)':''}: <strong>${e.punkte}</strong>
+    </div>`).join('');
+}
+
+// ============================================================
+// HILFSFUNKTIONEN
+// ============================================================
+async function raeumeBereinigen() {
+  try {
+    const snap = await get(ref(db, 'raeume'));
+    if (!snap.exists()) return;
+    const jetzt = Date.now();
+    const stunden24 = 24 * 60 * 60 * 1000;
+    for (const [code, raum] of Object.entries(snap.val())) {
+      if (raum.erstellt && (jetzt - raum.erstellt) > stunden24) {
+        await remove(ref(db, 'raeume/' + code));
+      }
+    }
+  } catch(e) { /* still */ }
+}
+
+function generiereCode(){const w=['WOLF','BIER','MOND','STERN','FUCHS','BAER','ADLER','ROSE','FEUER','EIS'];return w[Math.floor(Math.random()*w.length)]+(Math.floor(Math.random()*90)+10);}
+function zeigeLoginFehler(msg){document.getElementById('login-fehler').textContent=msg;setTimeout(()=>document.getElementById('login-fehler').textContent='',3000);}
+function setMeldung(t,typ){const el=document.getElementById('meldung');el.textContent=t;el.className='meldung'+(typ?' '+typ:'');}
+window.toggleRegeln=()=>document.getElementById('regeln-box').classList.toggle('sichtbar');
+window.zurueckZumLogin=function(){
+  if(hoererAbmelden){hoererAbmelden();hoererAbmelden=null;}
+  // Raum aus Firebase loeschen wenn Spiel vorbei oder Gastgeber verlässt
+  if(!soloModus && raumCode && (spielstand?.beendet || istGastgeber)) {
+    remove(ref(db,'raeume/'+raumCode)).catch(()=>{});
+  }
+  ['spiel-screen','warte-screen','runden-screen'].forEach(id=>document.getElementById(id).style.display='none');
+  document.getElementById('login-screen').style.display='block';
+  document.getElementById('spielende').classList.remove('sichtbar');
+  spielstand=null;soloModus=false;ichHabeEingetragen=false;rundenAuswertungAktiv=false;
+  resetWuerfel();
+};
+
+renderWuerfel();
+</script>
+</body>
+</html>
