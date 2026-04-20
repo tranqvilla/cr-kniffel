@@ -475,6 +475,7 @@ function zeigeRundenAuswertung(stand, rundeNr) {
     const name=spieler[id]?.name||'?';
     const div=document.createElement('div');
     div.className='runden-zug';
+    if(zug.verlassen){const div2=document.createElement('div');div2.className='runden-zug';div2.innerHTML=`<span class="runden-zug-name">${name}</span><br><span class="runden-zug-info" style="color:var(--rot)">hat das Spiel verlassen</span>`;zuegeDiv.appendChild(div2);continue;}
     const p=zug.punkte||0;
     const faktor=zug.spalte===0?1:zug.spalte===3?3:2;
     const mitFaktor=p*faktor;
@@ -707,7 +708,9 @@ async function pruefeRundeBeendet(meineNeueErg, runde) {
   let alleFelder=true;
   for(const [id,sp] of Object.entries(spieler)){
     const erg=id===meinId?meineNeueErg:(sp.ergebnisse||{});
-    if(Object.keys(erg).length<gesamtFelder){alleFelder=false;break;}
+    // Nur echte Einträge zählen (nicht verlassen-Marker)
+    const echteEintraege=Object.entries(erg).filter(([k,v])=>v>=0).length;
+    if(echteEintraege<gesamtFelder){alleFelder=false;break;}
   }
   await update(ref(db,'raeume/'+raumCode),{runde:runde+1,beendet:alleFelder});
 }
@@ -819,13 +822,40 @@ function generiereCode(){const w=['WOLF','BIER','MOND','STERN','FUCHS','BAER','A
 function zeigeLoginFehler(msg){document.getElementById('login-fehler').textContent=msg;setTimeout(()=>document.getElementById('login-fehler').textContent='',3000);}
 function setMeldung(t,typ){const el=document.getElementById('meldung');el.textContent=t;el.className='meldung'+(typ?' '+typ:'');}
 window.toggleRegeln=()=>document.getElementById('regeln-box').classList.toggle('sichtbar');
-window.zurueckZumLogin=function(){
+window.zurueckZumLogin=async function(){
   if(hoererAbmelden){hoererAbmelden();hoererAbmelden=null;}
   reloadBlockerAus();
-  // Raum aus Firebase loeschen wenn Spiel vorbei oder Gastgeber verlässt
-  if(!soloModus && raumCode && (spielstand?.beendet || istGastgeber)) {
-    remove(ref(db,'raeume/'+raumCode)).catch(()=>{});
+
+  if(!soloModus && raumCode) {
+    if(spielstand?.beendet) {
+      // Spiel vorbei: Raum löschen
+      remove(ref(db,'raeume/'+raumCode)).catch(()=>{});
+    } else if(spielstand && !spielstand.beendet) {
+      // Spiel läuft: Spieler aus Liste entfernen
+      // Wenn nur noch einer übrig wäre, Raum löschen
+      const spieler = spielstand.spieler || {};
+      const verbleibend = Object.keys(spieler).filter(id => id !== meinId);
+      if(verbleibend.length === 0) {
+        remove(ref(db,'raeume/'+raumCode)).catch(()=>{});
+      } else {
+        // Spieler entfernen und falls nötig Runde voranbringen
+        const runde = spielstand.runde || 1;
+        const updates = {};
+        updates['spieler/'+meinId] = null; // entfernen
+        // Falls wir diese Runde noch nicht eingetragen haben, 0 eintragen damit Runde nicht blockiert
+        if(!spielstand.rundenZuege?.[runde]?.[meinId]) {
+          updates['rundenZuege/'+runde+'/'+meinId] = {reihe:-1, spalte:-1, punkte:0, verlassen:true};
+        }
+        // Neue Reihenfolge ohne uns
+        const neueReihenfolge = (spielstand.reihenfolge||[]).filter(id=>id!==meinId);
+        updates['reihenfolge'] = neueReihenfolge;
+        await update(ref(db,'raeume/'+raumCode), updates).catch(()=>{});
+        // Prüfen ob alle jetzt eingetragen haben
+        await pruefeRundeBeendet({}, runde).catch(()=>{});
+      }
+    }
   }
+
   ['spiel-screen','warte-screen','runden-screen'].forEach(id=>document.getElementById(id).style.display='none');
   document.getElementById('login-screen').style.display='block';
   document.getElementById('spielende').classList.remove('sichtbar');
