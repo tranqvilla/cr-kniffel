@@ -312,6 +312,39 @@ const KATEGORIEN = [
 const SPALTEN_NAMEN = ['Frei','↓','↑','Hand'];
 
 let meinName='', meinId='', raumCode='', soloModus=false, istGastgeber=false;
+
+// Session im Browser speichern damit Reload kein Problem ist
+function speichereSession() {
+  if (soloModus || !raumCode) return;
+  localStorage.setItem('kniffel_session', JSON.stringify({meinName, meinId, raumCode, istGastgeber}));
+}
+function loescheSession() {
+  localStorage.removeItem('kniffel_session');
+}
+async function pruefeGespeicherteSession() {
+  try {
+    const raw = localStorage.getItem('kniffel_session');
+    if (!raw) return false;
+    const sess = JSON.parse(raw);
+    // Prüfen ob Raum noch existiert
+    const snap = await get(ref(db,'raeume/'+sess.raumCode));
+    if (!snap.exists()) { loescheSession(); return false; }
+    const daten = snap.val();
+    if (!daten.gestartet) { loescheSession(); return false; }
+    // Prüfen ob wir noch im Spiel sind
+    if (!daten.spieler?.[sess.meinId]) { loescheSession(); return false; }
+    // Alles gut – wiederherstellen!
+    meinName=sess.meinName; meinId=sess.meinId;
+    raumCode=sess.raumCode; istGastgeber=sess.istGastgeber;
+    soloModus=false;
+    spielstand=daten; anzeigeSpielerId=meinId;
+    ichHabeEingetragen=!!(daten.rundenZuege?.[daten.runde]?.[meinId]);
+    letzteRundenNr=daten.runde||1;
+    document.getElementById('modus-subtitle').textContent='Mehrspieler – '+raumCode;
+    zeigeSpielScreen();
+    return true;
+  } catch(e) { loescheSession(); return false; }
+}
 let spielstand=null, anzeigeSpielerId='', hoererAbmelden=null;
 let wurf=[0,0,0,0,0], festgehalten=[false,false,false,false,false], wurfZaehler=0;
 let ichHabeEingetragen=false;
@@ -390,6 +423,7 @@ function warteRaumBeobachten() {
     }
     if (daten.gestartet && document.getElementById('warte-screen').style.display!='none') {
       spielstand=daten; anzeigeSpielerId=meinId; ichHabeEingetragen=false; letzteRundenNr=daten.runde||1;
+      speichereSession();
       zeigeSpielScreen();
     }
   });
@@ -808,6 +842,7 @@ function setMeldung(t,typ){const el=document.getElementById('meldung');el.textCo
 window.toggleRegeln=()=>document.getElementById('regeln-box').classList.toggle('sichtbar');
 window.zurueckZumLogin=function(){
   if(hoererAbmelden){hoererAbmelden();hoererAbmelden=null;}
+  loescheSession();
   // Raum aus Firebase loeschen wenn Spiel vorbei oder Gastgeber verlässt
   if(!soloModus && raumCode && (spielstand?.beendet || istGastgeber)) {
     remove(ref(db,'raeume/'+raumCode)).catch(()=>{});
@@ -820,6 +855,12 @@ window.zurueckZumLogin=function(){
 };
 
 renderWuerfel();
+// Beim Start: gespeicherte Session wiederherstellen?
+pruefeGespeicherteSession().then(wiederhergestellt => {
+  if (!wiederhergestellt) {
+    // Kein aktives Spiel - Login anzeigen (default)
+  }
+});
 </script>
 </body>
 </html>
