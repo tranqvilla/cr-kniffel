@@ -313,54 +313,15 @@ const SPALTEN_NAMEN = ['Frei','↓','↑','Hand'];
 
 let meinName='', meinId='', raumCode='', soloModus=false, istGastgeber=false;
 
-// Session im Browser speichern damit Reload kein Problem ist
-function speichereSession() {
-  if (soloModus) {
-    // Solo: kompletten Spielstand speichern
-    localStorage.setItem('kniffel_session', JSON.stringify({
-      solo: true, meinName, spielstand
-    }));
-    return;
-  }
-  if (!raumCode) return;
-  localStorage.setItem('kniffel_session', JSON.stringify({meinName, meinId, raumCode, istGastgeber}));
+// Reload-Blocker: warnt wenn Spiel läuft
+function reloadBlockerAn() {
+  window.addEventListener('beforeunload', reloadBlockerHandler);
 }
-function loescheSession() {
-  localStorage.removeItem('kniffel_session');
+function reloadBlockerAus() {
+  window.removeEventListener('beforeunload', reloadBlockerHandler);
 }
-async function pruefeGespeicherteSession() {
-  try {
-    const raw = localStorage.getItem('kniffel_session');
-    if (!raw) return false;
-    const sess = JSON.parse(raw);
-    // Solo wiederherstellen
-    if (sess.solo) {
-      if (!sess.spielstand || sess.spielstand.beendet) { loescheSession(); return false; }
-      meinName=sess.meinName; meinId='solo'; soloModus=true; raumCode='';
-      spielstand=sess.spielstand; anzeigeSpielerId='solo';
-      ichHabeEingetragen=false; letzteRundenNr=spielstand.runde||1;
-      document.getElementById('modus-subtitle').textContent='Einzelspieler';
-      zeigeSpielScreen();
-      return true;
-    }
-    // Prüfen ob Raum noch existiert
-    const snap = await get(ref(db,'raeume/'+sess.raumCode));
-    if (!snap.exists()) { loescheSession(); return false; }
-    const daten = snap.val();
-    if (!daten.gestartet) { loescheSession(); return false; }
-    // Prüfen ob wir noch im Spiel sind
-    if (!daten.spieler?.[sess.meinId]) { loescheSession(); return false; }
-    // Alles gut – wiederherstellen!
-    meinName=sess.meinName; meinId=sess.meinId;
-    raumCode=sess.raumCode; istGastgeber=sess.istGastgeber;
-    soloModus=false;
-    spielstand=daten; anzeigeSpielerId=meinId;
-    ichHabeEingetragen=!!(daten.rundenZuege?.[daten.runde]?.[meinId]);
-    letzteRundenNr=daten.runde||1;
-    document.getElementById('modus-subtitle').textContent='Mehrspieler – '+raumCode;
-    zeigeSpielScreen();
-    return true;
-  } catch(e) { loescheSession(); return false; }
+function reloadBlockerHandler(e) {
+  e.preventDefault();
 }
 let spielstand=null, anzeigeSpielerId='', hoererAbmelden=null;
 let wurf=[0,0,0,0,0], festgehalten=[false,false,false,false,false], wurfZaehler=0;
@@ -459,6 +420,7 @@ function zeigeSpielScreen() {
   document.getElementById('spiel-screen').style.display='block';
   resetWuerfel();
   rundenAuswertungAktiv=false;
+  reloadBlockerAn();
 
   if (!soloModus) {
     if (hoererAbmelden) hoererAbmelden();
@@ -549,7 +511,6 @@ window.rundeWeiter = function() {
   rundenAuswertungAktiv=false;
   document.getElementById('runden-screen').style.display='none';
   document.getElementById('spiel-screen').style.display='block';
-  speichereSession();
   if (spielstand?.beendet) {
     aktualisiereSpielUI();
     zeigeSpielEnde();
@@ -706,7 +667,6 @@ window.eintragen = async function(reihe, spalte) {
 
   ichHabeEingetragen=true;
   setMeldung('Eingetragen: '+wert+' Punkte','ok');
-  speichereSession();
 
   if(!soloModus){
     await update(ref(db,'raeume/'+raumCode),{
@@ -861,7 +821,7 @@ function setMeldung(t,typ){const el=document.getElementById('meldung');el.textCo
 window.toggleRegeln=()=>document.getElementById('regeln-box').classList.toggle('sichtbar');
 window.zurueckZumLogin=function(){
   if(hoererAbmelden){hoererAbmelden();hoererAbmelden=null;}
-  loescheSession();
+  reloadBlockerAus();
   // Raum aus Firebase loeschen wenn Spiel vorbei oder Gastgeber verlässt
   if(!soloModus && raumCode && (spielstand?.beendet || istGastgeber)) {
     remove(ref(db,'raeume/'+raumCode)).catch(()=>{});
@@ -874,12 +834,6 @@ window.zurueckZumLogin=function(){
 };
 
 renderWuerfel();
-// Beim Start: gespeicherte Session wiederherstellen?
-pruefeGespeicherteSession().then(wiederhergestellt => {
-  if (!wiederhergestellt) {
-    // Kein aktives Spiel - Login anzeigen (default)
-  }
-});
 </script>
 </body>
 </html>
