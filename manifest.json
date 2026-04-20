@@ -1,0 +1,17 @@
+{
+  "name": "CR-Kniffel",
+  "short_name": "Kniffel",
+  "description": "Crossroads Kniffel für die Familie",
+  "start_url": "/cr-kniffel/",
+  "display": "standalone",
+  "background_color": "#993333",
+  "theme_color": "#993333",
+  "icons": [
+    {
+      "src": "/cr-kniffel/icon.png",
+      "sizes": "1380x1380",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
