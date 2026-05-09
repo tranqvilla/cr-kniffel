@@ -201,7 +201,7 @@
 </div>
 
 <!-- RANGLISTE -->
-<div style="max-width:400px;margin:12px auto 0;">
+<div id="rl-box" style="max-width:400px;margin:12px auto 0;">
   <div style="display:flex;gap:6px;margin-bottom:8px;">
     <button class="rl-tab" id="rl-tab-solo" onclick="rlTab('solo')">🎯 Solo Top 10</button>
     <button class="rl-tab" id="rl-tab-multi" onclick="rlTab('multi')">🎲 Multi Top 10</button>
@@ -434,6 +434,7 @@ function zeigeSpielScreen() {
   resetWuerfel();
   rundenAuswertungAktiv=false;
   reloadBlockerAn();
+  const rlBox=document.getElementById('rl-box'); if(rlBox) rlBox.style.display='none';
 
   if (!soloModus) {
     if (hoererAbmelden) hoererAbmelden();
@@ -902,6 +903,7 @@ window.zurueckZumLogin=async function(){
 
   ['spiel-screen','warte-screen','runden-screen'].forEach(id=>document.getElementById(id).style.display='none');
   document.getElementById('login-screen').style.display='block';
+  const rlBox2=document.getElementById('rl-box'); if(rlBox2) rlBox2.style.display='block';
   document.getElementById('spielende').classList.remove('sichtbar');
   spielstand=null;soloModus=false;ichHabeEingetragen=false;rundenAuswertungAktiv=false;
   resetWuerfel();
