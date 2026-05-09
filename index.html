@@ -175,7 +175,7 @@
 <body>
 
 <div style="max-width:400px;margin:0 auto 8px;background:#111;border:1px solid #333;border-radius:6px;padding:4px 10px;font-size:0.55rem;color:#787878;letter-spacing:1px;text-align:center">
-  <span style="color:#c9a84c">v2025-05-09</span> · Zettel-Anzeige verbessert
+  <span style="color:#c9a84c">v2025-05-09b</span> · Ergebnisse mitloggen für spätere Rangliste
 </div>
 <h1>CR-KNIFFEL</h1>
 <p class="subtitle" id="modus-subtitle">Crossroads Edition</p>
@@ -287,7 +287,7 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
-import { getDatabase, ref, set, get, onValue, update, remove }
+import { getDatabase, ref, set, get, push, onValue, update, remove }
   from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
 
 const firebaseConfig = {
@@ -713,6 +713,7 @@ window.eintragen = async function(reihe, spalte) {
     const gesamtFelder=13*4;
     const beendet=Object.keys(neueErg).length>=gesamtFelder;
     spielstand.beendet=beendet;
+    if(beendet){ const gp=[0,1,2,3].reduce((a,s)=>a+berechneSpalte(neueErg,s),0); speichereScore(gp,'solo'); }
     const rundeZurAuswertung=runde;
     letzteRundenNr=runde+1;
     spielstand.runde=runde+1;
@@ -743,6 +744,7 @@ async function pruefeRundeBeendet(meineNeueErg, runde) {
     const echteEintraege=Object.entries(erg).filter(([k,v])=>v>=0).length;
     if(echteEintraege<gesamtFelder){alleFelder=false;break;}
   }
+  if(alleFelder){ const gp=[0,1,2,3].reduce((a,s)=>a+berechneSpalte(meineNeueErg,s),0); speichereScore(gp,'multi'); }
   await update(ref(db,'raeume/'+raumCode),{runde:runde+1,beendet:alleFelder});
 }
 
@@ -893,6 +895,13 @@ window.zurueckZumLogin=async function(){
   spielstand=null;soloModus=false;ichHabeEingetragen=false;rundenAuswertungAktiv=false;
   resetWuerfel();
 };
+
+// Score speichern
+async function speichereScore(punkte, typ) {
+  try {
+    await push(ref(db, 'scores'), { name: meinName, punkte, typ, datum: Date.now() });
+  } catch(e) { console.log('Score speichern fehlgeschlagen:', e); }
+}
 
 renderWuerfel();
 </script>
