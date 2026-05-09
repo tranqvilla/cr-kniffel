@@ -177,7 +177,7 @@
 <body>
 
 <div style="max-width:400px;margin:0 auto 8px;background:#111;border:1px solid #333;border-radius:6px;padding:4px 10px;font-size:0.55rem;color:#787878;letter-spacing:1px;text-align:center">
-  <span style="color:#c9a84c">v2025-05-09c</span> · Rangliste hinzugefügt
+  <span style="color:#c9a84c">v2025-05-09d</span> · Score-Fix: alle Spieler werden gespeichert
 </div>
 <h1>CR-KNIFFEL</h1>
 <p class="subtitle" id="modus-subtitle">Crossroads Edition</p>
@@ -454,12 +454,7 @@ function zeigeSpielScreen() {
         return;
       }
 
-      // Wenn Spiel gerade beendet: eigenen Score speichern
-      if(neuerStand.beendet && !spielstand?.beendet) {
-        const meineErg = neuerStand.spieler?.[meinId]?.ergebnisse || {};
-        const gp = [0,1,2,3].reduce((a,s)=>a+berechneSpalte(meineErg,s),0);
-        speichereScore(gp,'multi');
-      }
+
       spielstand=neuerStand;
       if (!rundenAuswertungAktiv) aktualisiereSpielUI();
     });
@@ -717,6 +712,11 @@ window.eintragen = async function(reihe, spalte) {
 
   ichHabeEingetragen=true;
   setMeldung('Eingetragen: '+wert+' Punkte','ok');
+  // Wenn das mein letztes Feld war: Score direkt speichern
+  if(!soloModus && Object.keys(neueErg).length >= 13*4) {
+    const gp=[0,1,2,3].reduce((a,s)=>a+berechneSpalte(neueErg,s),0);
+    speichereScore(gp,'multi');
+  }
 
   if(!soloModus){
     await update(ref(db,'raeume/'+raumCode),{
