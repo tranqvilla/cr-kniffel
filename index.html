@@ -170,12 +170,14 @@
   .regeln-box strong { color: var(--hell); }
 
   .fehler-meldung { color: var(--rot); font-size: 0.7rem; text-align: center; margin-top: 8px; min-height: 20px; }
+  .rl-tab { flex:1; font-family:'IBM Plex Mono',monospace; font-size:0.65rem; padding:6px; border-radius:4px; border:1px solid #333; background:#111; color:var(--grau); cursor:pointer; letter-spacing:1px; text-align:center; }
+  .rl-tab.aktiv { border-color:var(--gold); color:var(--gold); background:#1a1500; }
 </style>
 </head>
 <body>
 
 <div style="max-width:400px;margin:0 auto 8px;background:#111;border:1px solid #333;border-radius:6px;padding:4px 10px;font-size:0.55rem;color:#787878;letter-spacing:1px;text-align:center">
-  <span style="color:#c9a84c">v2025-05-09b</span> · Ergebnisse mitloggen für spätere Rangliste
+  <span style="color:#c9a84c">v2025-05-09c</span> · Rangliste hinzugefügt
 </div>
 <h1>CR-KNIFFEL</h1>
 <p class="subtitle" id="modus-subtitle">Crossroads Edition</p>
@@ -196,6 +198,15 @@
   </div>
   <button class="btn btn-secondary" onclick="raumBeitreten()">→ Beitreten</button>
   <div class="fehler-meldung" id="login-fehler"></div>
+</div>
+
+<!-- RANGLISTE -->
+<div style="max-width:400px;margin:12px auto 0;">
+  <div style="display:flex;gap:6px;margin-bottom:8px;">
+    <button class="rl-tab" id="rl-tab-solo" onclick="rlTab('solo')">🎯 Solo Top 10</button>
+    <button class="rl-tab" id="rl-tab-multi" onclick="rlTab('multi')">🎲 Multi Top 10</button>
+  </div>
+  <div id="rl-inhalt"></div>
 </div>
 
 <!-- WARTERAUM -->
@@ -897,6 +908,39 @@ window.zurueckZumLogin=async function(){
 };
 
 // Score speichern
+window.rlTab = function(typ) {
+  document.getElementById('rl-tab-solo').className = 'rl-tab' + (typ==='solo'?' aktiv':'');
+  document.getElementById('rl-tab-multi').className = 'rl-tab' + (typ==='multi'?' aktiv':'');
+  ladeRangliste(typ);
+};
+
+async function ladeRangliste(typ) {
+  const inhalt = document.getElementById('rl-inhalt');
+  if (!inhalt) return;
+  inhalt.innerHTML = '<div style="color:#787878;font-size:0.65rem;text-align:center;padding:12px">Lade...</div>';
+  try {
+    const snap = await get(ref(db, 'scores'));
+    if (!snap.exists()) { inhalt.innerHTML = '<div style="color:#787878;font-size:0.65rem;text-align:center;padding:12px">Noch keine Einträge!</div>'; return; }
+    const alle = [];
+    snap.forEach(child => { const d = child.val(); if (d.typ === typ) alle.push(d); });
+    alle.sort((a,b) => b.punkte - a.punkte);
+    const top10 = alle.slice(0, 10);
+    if (top10.length === 0) { inhalt.innerHTML = '<div style="color:#787878;font-size:0.65rem;text-align:center;padding:12px">Noch keine Einträge!</div>'; return; }
+    inhalt.innerHTML = '';
+    top10.forEach((e, i) => {
+      const div = document.createElement('div');
+      div.style.cssText = 'display:flex;align-items:center;padding:6px 8px;background:#1a1a1a;border-radius:4px;margin-bottom:4px;font-size:0.7rem;gap:8px;';
+      const platz = i === 0 ? '🏆' : (i+1)+'.';
+      const platzColor = i === 0 ? '#c9a84c' : '#787878';
+      const datum = e.datum ? new Date(e.datum).toLocaleDateString('de-DE') : '';
+      div.innerHTML = `<span style="font-family:'Bebas Neue',sans-serif;font-size:1rem;width:24px;color:${platzColor}">${platz}</span><span style="flex:1;font-weight:700">${e.name}</span><span style="font-size:0.55rem;color:#787878">${datum}</span><span style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;margin-left:8px">${e.punkte}</span>`;
+      inhalt.appendChild(div);
+    });
+  } catch(err) {
+    inhalt.innerHTML = '<div style="color:#993333;font-size:0.65rem;text-align:center;padding:12px">Fehler beim Laden</div>';
+  }
+}
+
 async function speichereScore(punkte, typ) {
   try {
     await push(ref(db, 'scores'), { name: meinName, punkte, typ, datum: Date.now() });
