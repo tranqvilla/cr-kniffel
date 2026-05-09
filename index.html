@@ -485,9 +485,9 @@ function zeigeRundenAuswertung(stand, rundeNr) {
     const kat=KATEGORIEN[zug.reihe]?.name||'?';
     // Spalten-Badge
     let badge='';
-    if(istHand) badge='<span style="background:var(--rot);color:white;font-size:0.6rem;padding:2px 6px;border-radius:10px;margin-left:6px;letter-spacing:1px">HAND ×3</span>';
-    else if(istRunter) badge='<span style="background:#4a5c7c;color:white;font-size:0.6rem;padding:2px 6px;border-radius:10px;margin-left:6px;letter-spacing:1px">RUNTER ×2</span>';
-    else if(istRauf) badge='<span style="background:#5c4a7c;color:white;font-size:0.6rem;padding:2px 6px;border-radius:10px;margin-left:6px;letter-spacing:1px">RAUF ×2</span>';
+    if(istHand) badge='<span style="background:#c9a84c;color:#1a1a1a;font-size:0.6rem;padding:2px 6px;border-radius:10px;margin-left:6px;letter-spacing:1px;font-weight:900">HAND ×3</span>';
+    else if(istRunter) badge='<span style="background:#993333;color:white;font-size:0.6rem;padding:2px 6px;border-radius:10px;margin-left:6px;letter-spacing:1px">RUNTER ×2</span>';
+    else if(istRauf) badge='<span style="background:#993333;color:white;font-size:0.6rem;padding:2px 6px;border-radius:10px;margin-left:6px;letter-spacing:1px">RAUF ×2</span>';
     // Bonus prüfen: hat dieser Spieler in dieser Runde den Bonus erreicht?
     const spielerErg=spielstand?.spieler?.[id]?.ergebnisse||{};
     let bonusZeile='';
@@ -570,7 +570,7 @@ function aktualisiereSpielUI() {
     const hatEingetragen=!!rundenZuege[id];
     const btn=document.createElement('button');
     btn.className='spieler-tab'+(id===anzeigeSpielerId?' aktiv':'')+(hatEingetragen?' fertig':'');
-    btn.textContent=sp.name+(id===meinId?' (du)':'')+(hatEingetragen?' ✓':'');
+    btn.textContent=(id===meinId?'':' 👁 ')+sp.name+(id===meinId?' (du)':'')+(hatEingetragen?' ✓':'');
     btn.onclick=()=>{anzeigeSpielerId=id;aktualisiereSpielUI();};
     tabs.appendChild(btn);
   }
@@ -578,13 +578,24 @@ function aktualisiereSpielUI() {
   document.getElementById('punkte-name-label').textContent=spieler[anzeigeSpielerId]?.name||'';
   aktualisiereAnzeige();
   renderSpielfeld(!ichHabeEingetragen && anzeigeSpielerId===meinId);
-  // Fremdes Blatt visuell unterscheiden
+  // Fremder Zettel: kräftiger Rahmen + Banner
   const container=document.querySelector('.spielfeld-container');
+  let fremdbanner=document.getElementById('fremd-banner');
+  if(!fremdbanner){
+    fremdbanner=document.createElement('div');
+    fremdbanner.id='fremd-banner';
+    fremdbanner.style.cssText='display:none;background:#2a1a00;border:2px solid var(--gold);border-radius:8px;padding:8px 14px;margin-bottom:8px;text-align:center;font-size:0.75rem;color:var(--gold);font-weight:700;letter-spacing:1px;';
+    container.parentNode.insertBefore(fremdbanner, container);
+  }
   if(container){
     if(anzeigeSpielerId!==meinId){
-      container.style.cssText='overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:8px;border:2px solid #4a5c7c;opacity:0.85;';
-      document.getElementById('punkte-name-label').style.color='#6a7aaa';
+      const fremdName=spielstand?.spieler?.[anzeigeSpielerId]?.name||'?';
+      fremdbanner.style.display='block';
+      fremdbanner.textContent='👁 Du schaust '+fremdName+'s Zettel an – das ist nicht deiner!';
+      container.style.cssText='overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:8px;border:3px solid var(--gold);';
+      document.getElementById('punkte-name-label').style.color='var(--gold)';
     } else {
+      fremdbanner.style.display='none';
       container.style.cssText='overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:8px;border:1px solid #ccc;';
       document.getElementById('punkte-name-label').style.color='';
     }
