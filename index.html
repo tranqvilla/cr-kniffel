@@ -479,11 +479,29 @@ function zeigeRundenAuswertung(stand, rundeNr) {
     const faktor=zug.spalte===0?1:zug.spalte===3?3:2;
     const mitFaktor=p*faktor;
     const istHand=zug.spalte===3;
+    const istRunter=zug.spalte===1;
+    const istRauf=zug.spalte===2;
     const pk=mitFaktor>=100?'super':(mitFaktor>0?'gut':'schlecht');
     const kat=KATEGORIEN[zug.reihe]?.name||'?';
-    const sp=SPALTEN_NAMEN[zug.spalte]||'?';
-    const handBadge=istHand?'<span style="background:var(--rot);color:white;font-size:0.6rem;padding:2px 6px;border-radius:10px;margin-left:6px;letter-spacing:1px">HAND ×3</span>':'';
-    div.innerHTML=`<span class="runden-zug-punkte ${pk}">${mitFaktor>0?'+':''}${mitFaktor}</span><span class="runden-zug-name" style="font-size:${istHand?'0.95rem':'0.8rem'};font-weight:${istHand?'900':'700'}">${name}</span>${handBadge}<br><span class="runden-zug-info" style="font-size:${istHand?'0.75rem':'0.65rem'};font-weight:${istHand?'700':'400'}">${kat}${faktor>1?' · <span style="color:var(--gold)">×'+faktor+'</span>':''}${p!==mitFaktor?' = '+p+'×'+faktor:''}</span>`;
+    // Spalten-Badge
+    let badge='';
+    if(istHand) badge='<span style="background:var(--rot);color:white;font-size:0.6rem;padding:2px 6px;border-radius:10px;margin-left:6px;letter-spacing:1px">HAND ×3</span>';
+    else if(istRunter) badge='<span style="background:#4a5c7c;color:white;font-size:0.6rem;padding:2px 6px;border-radius:10px;margin-left:6px;letter-spacing:1px">RUNTER ×2</span>';
+    else if(istRauf) badge='<span style="background:#5c4a7c;color:white;font-size:0.6rem;padding:2px 6px;border-radius:10px;margin-left:6px;letter-spacing:1px">RAUF ×2</span>';
+    // Bonus prüfen: hat dieser Spieler in dieser Runde den Bonus erreicht?
+    const spielerErg=spielstand?.spieler?.[id]?.ergebnisse||{};
+    let bonusZeile='';
+    for(let s=0;s<=3;s++){
+      const oben=[0,1,2,3,4,5].reduce((a,r)=>{const k=r+'_'+s;return a+(spielerErg[k]||0);},0);
+      const ohneNeu=[0,1,2,3,4,5].reduce((a,r)=>{const k=r+'_'+s;if(k===zug.reihe+'_'+zug.spalte)return a;return a+(spielerErg[k]||0);},0);
+      if(oben>=63&&ohneNeu<63){
+        const spNamen=['Frei','Runter','Rauf','Hand'];
+        bonusZeile+=`<span style="color:var(--gold);font-size:0.65rem"> 🎉 Bonus +35 (${spNamen[s]})</span>`;
+      }
+    }
+    const nameGroesse=istHand?'0.95rem':'0.8rem';
+    const nameGewicht=istHand?'900':'700';
+    div.innerHTML=`<span class="runden-zug-punkte ${pk}">${mitFaktor>0?'+':''}${mitFaktor}</span><span class="runden-zug-name" style="font-size:${nameGroesse};font-weight:${nameGewicht}">${name}</span>${badge}<br><span class="runden-zug-info">${kat}</span>${bonusZeile}`;
     zuegeDiv.appendChild(div);
   }
 
@@ -761,7 +779,7 @@ function erstelleZeile(reihe,erg,klickbar){
       const v=berechneWert(kat.typ,kat.param!==undefined?kat.param:reihe,spalte);
       span.classList.add('klickbar');
       if(reihe<=5){const d=v-(3*(reihe+1));span.textContent=d>=0?'+'+d:''+d;}
-      else{span.textContent=v===0?'0':v;}
+      else{span.textContent=v===0?'X':v;}
       const r=reihe,s=spalte;
       span.onclick=()=>eintragen(r,s);
       span.title='Eintragen: '+v+' Punkte';
