@@ -454,6 +454,12 @@ function zeigeSpielScreen() {
         return;
       }
 
+      // Wenn Spiel gerade beendet: eigenen Score speichern
+      if(neuerStand.beendet && !spielstand?.beendet) {
+        const meineErg = neuerStand.spieler?.[meinId]?.ergebnisse || {};
+        const gp = [0,1,2,3].reduce((a,s)=>a+berechneSpalte(meineErg,s),0);
+        speichereScore(gp,'multi');
+      }
       spielstand=neuerStand;
       if (!rundenAuswertungAktiv) aktualisiereSpielUI();
     });
@@ -756,7 +762,7 @@ async function pruefeRundeBeendet(meineNeueErg, runde) {
     const echteEintraege=Object.entries(erg).filter(([k,v])=>v>=0).length;
     if(echteEintraege<gesamtFelder){alleFelder=false;break;}
   }
-  if(alleFelder){ const gp=[0,1,2,3].reduce((a,s)=>a+berechneSpalte(meineNeueErg,s),0); speichereScore(gp,'multi'); }
+  // Score wird im Firebase-Listener gespeichert wenn beendet=true ankommt
   await update(ref(db,'raeume/'+raumCode),{runde:runde+1,beendet:alleFelder});
 }
 
