@@ -929,8 +929,7 @@ window.zurueckZumLogin=async function(){
 
 // Score speichern
 window.rlTab = function(typ) {
-  document.getElementById('rl-tab-solo').className = 'rl-tab' + (typ==='solo'?' aktiv':'');
-  document.getElementById('rl-tab-multi').className = 'rl-tab' + (typ==='multi'?' aktiv':'');
+  document.getElementById('rl-tab-solo').className = 'rl-tab aktiv';
   ladeRangliste(typ);
 };
 
