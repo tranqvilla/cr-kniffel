@@ -177,7 +177,7 @@
 <body>
 
 <div style="max-width:400px;margin:0 auto 8px;background:#111;border:1px solid #333;border-radius:6px;padding:4px 10px;font-size:0.55rem;color:#787878;letter-spacing:1px;text-align:center">
-  <span style="color:#c9a84c">v2025-05-09e</span> · Score-Fix: Speichern beim Endscreen
+  <span style="color:#c9a84c">v2025-05-10</span> · Rundenanzeigex: Speichern beim Endscreen
 </div>
 <h1>CR-KNIFFEL</h1>
 <p class="subtitle" id="modus-subtitle">Crossroads Edition</p>
@@ -245,6 +245,7 @@
   </div>
 
   <div class="status-banner aktiv" id="status-banner">🎲 Du bist dran!</div>
+  <div id="runden-anzeige" style="text-align:center;font-size:0.65rem;color:var(--grau);letter-spacing:2px;margin-bottom:8px;"></div>
   <div class="spieler-tabs" id="spieler-tabs"></div>
 
   <div class="punkte-banner">
@@ -590,6 +591,11 @@ function aktualisiereSpielUI() {
     btn.onclick=()=>{anzeigeSpielerId=id;aktualisiereSpielUI();};
     tabs.appendChild(btn);
   }
+
+  // Rundenanzeige
+  const aktRunde = spielstand.runde||1;
+  const rundenAnz = document.getElementById('runden-anzeige');
+  if(rundenAnz) rundenAnz.textContent = 'RUNDE ' + Math.min(aktRunde, 13) + ' VON 13';
 
   document.getElementById('punkte-name-label').textContent=spieler[anzeigeSpielerId]?.name||'';
   aktualisiereAnzeige();
