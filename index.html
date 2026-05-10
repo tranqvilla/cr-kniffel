@@ -177,7 +177,7 @@
 <body>
 
 <div style="max-width:400px;margin:0 auto 8px;background:#111;border:1px solid #333;border-radius:6px;padding:4px 10px;font-size:0.55rem;color:#787878;letter-spacing:1px;text-align:center">
-  <span style="color:#c9a84c">v2025-05-10</span> · Rundenanzeigex: Speichern beim Endscreen
+  <span style="color:#c9a84c">v2025-05-10b</span> · Endscreen + Rundenanzeige fixx: Speichern beim Endscreen
 </div>
 <h1>CR-KNIFFEL</h1>
 <p class="subtitle" id="modus-subtitle">Crossroads Edition</p>
@@ -235,14 +235,18 @@
   </div>
 </div>
 
+<!-- END-SCREEN -->
+<div id="end-screen" style="display:none;max-width:440px;margin:20px auto;">
+  <div class="runden-box">
+    <div class="runden-titel">🏆 SPIEL BEENDET!</div>
+    <div class="runden-untertitel">ENDABRECHNUNG</div>
+    <div id="end-ranking" style="margin-bottom:16px;"></div>
+    <button class="btn btn-primary" onclick="zurueckZumLogin()">Neues Spiel</button>
+  </div>
+</div>
+
 <!-- SPIEL -->
 <div id="spiel-screen">
-
-  <div class="spielende-banner" id="spielende">
-    <div class="spielende-titel">🎲 Spiel beendet!</div>
-    <div id="spielende-inhalt" style="margin-top:12px"></div>
-    <button class="btn btn-klein" style="margin-top:12px" onclick="zurueckZumLogin()">Neues Spiel</button>
-  </div>
 
   <div class="status-banner aktiv" id="status-banner">🎲 Du bist dran!</div>
   <div id="runden-anzeige" style="text-align:center;font-size:0.65rem;color:var(--grau);letter-spacing:2px;margin-bottom:8px;"></div>
@@ -545,11 +549,10 @@ function zeigeRundenAuswertung(stand, rundeNr) {
 window.rundeWeiter = function() {
   rundenAuswertungAktiv=false;
   document.getElementById('runden-screen').style.display='none';
-  document.getElementById('spiel-screen').style.display='block';
   if (spielstand?.beendet) {
-    aktualisiereSpielUI();
     zeigeSpielEnde();
   } else {
+    document.getElementById('spiel-screen').style.display='block';
     aktualisiereSpielUI();
   }
 };
@@ -592,10 +595,10 @@ function aktualisiereSpielUI() {
     tabs.appendChild(btn);
   }
 
-  // Rundenanzeige
+  // Rundenanzeige: 52 Runden total (13 Kategorien x 4 Spalten)
   const aktRunde = spielstand.runde||1;
   const rundenAnz = document.getElementById('runden-anzeige');
-  if(rundenAnz) rundenAnz.textContent = 'RUNDE ' + Math.min(aktRunde, 13) + ' VON 13';
+  if(rundenAnz) rundenAnz.textContent = 'RUNDE ' + Math.min(aktRunde, 52) + ' VON 52';
 
   document.getElementById('punkte-name-label').textContent=spieler[anzeigeSpielerId]?.name||'';
   aktualisiereAnzeige();
@@ -848,15 +851,22 @@ function zeigeSpielEnde(){
     const gp=[0,1,2,3].reduce((a,s)=>a+berechneSpalte(meineErg,s),0);
     speichereScore(gp,'multi');
   }
-  document.getElementById('spielende').classList.add('sichtbar');
+  // Alle Screens ausblenden, End-Screen zeigen
+  document.getElementById('spiel-screen').style.display='none';
+  document.getElementById('runden-screen').style.display='none';
+  document.getElementById('end-screen').style.display='block';
+
   const sp=spielstand?.spieler||{};
   const liste=Object.entries(sp).map(([id,s])=>{
     const p=[0,1,2,3].reduce((a,col)=>a+berechneSpalte(s.ergebnisse||{},col),0);
     return{name:s.name,punkte:p,ich:id===meinId};
   }).sort((a,b)=>b.punkte-a.punkte);
-  document.getElementById('spielende-inhalt').innerHTML=liste.map((e,i)=>
-    `<div style="padding:4px 0;font-size:0.85rem;color:${i===0?'var(--gold)':'var(--hell)'}">
-      ${i===0?'🏆':''} ${e.name}${e.ich?' (du)':''}: <strong>${e.punkte}</strong>
+
+  document.getElementById('end-ranking').innerHTML=liste.map((e,i)=>`
+    <div class="ranking-zeile ${i===0?'erster':''}" style="font-size:1rem;padding:8px 0;">
+      <span class="ranking-platz" style="font-size:1.4rem">${i===0?'🏆':(i+1)+'.'}</span>
+      <span class="ranking-name" style="font-size:1rem">${e.name}${e.ich?' (du)':''}</span>
+      <span class="ranking-punkte" style="font-size:1.6rem">${e.punkte}</span>
     </div>`).join('');
 }
 
@@ -915,7 +925,7 @@ window.zurueckZumLogin=async function(){
     }
   }
 
-  ['spiel-screen','warte-screen','runden-screen'].forEach(id=>document.getElementById(id).style.display='none');
+  ['spiel-screen','warte-screen','runden-screen','end-screen'].forEach(id=>document.getElementById(id).style.display='none');
   document.getElementById('login-screen').style.display='block';
   const rlBox2=document.getElementById('rl-box'); if(rlBox2) rlBox2.style.display='block';
   document.getElementById('spielende').classList.remove('sichtbar');
