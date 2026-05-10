@@ -177,7 +177,7 @@
 <body>
 
 <div style="max-width:400px;margin:0 auto 8px;background:#111;border:1px solid #333;border-radius:6px;padding:4px 10px;font-size:0.55rem;color:#787878;letter-spacing:1px;text-align:center">
-  <span style="color:#c9a84c">v2025-05-10b</span> · Endscreen + Rundenanzeige fixx: Speichern beim Endscreen
+  <span style="color:#c9a84c">v2025-05-10c</span> · Score-Fix doppelter Eintragx: Speichern beim Endscreen
 </div>
 <h1>CR-KNIFFEL</h1>
 <p class="subtitle" id="modus-subtitle">Crossroads Edition</p>
@@ -626,7 +626,7 @@ function aktualisiereSpielUI() {
     }
   }
 
-  if (spielstand.beendet) zeigeSpielEnde();
+  // Endscreen wird von rundeWeiter aufgerufen, nicht hier
 }
 
 // ============================================================
@@ -845,8 +845,9 @@ function aktualisiereAnzeige(){
 }
 
 function zeigeSpielEnde(){
-  // Score speichern wenn Endscreen erscheint
-  if(!soloModus && meinId) {
+  // Score nur einmal speichern
+  if(!soloModus && meinId && !window._scoreSaved) {
+    window._scoreSaved = true;
     const meineErg=getErgebnisse(meinId);
     const gp=[0,1,2,3].reduce((a,s)=>a+berechneSpalte(meineErg,s),0);
     speichereScore(gp,'multi');
@@ -929,7 +930,7 @@ window.zurueckZumLogin=async function(){
   document.getElementById('login-screen').style.display='block';
   const rlBox2=document.getElementById('rl-box'); if(rlBox2) rlBox2.style.display='block';
   document.getElementById('spielende').classList.remove('sichtbar');
-  spielstand=null;soloModus=false;ichHabeEingetragen=false;rundenAuswertungAktiv=false;
+  spielstand=null;soloModus=false;ichHabeEingetragen=false;rundenAuswertungAktiv=false;window._scoreSaved=false;
   resetWuerfel();
 };
 
