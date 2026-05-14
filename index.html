@@ -177,7 +177,7 @@
 <body>
 
 <div style="max-width:400px;margin:0 auto 8px;background:#111;border:1px solid #333;border-radius:6px;padding:4px 10px;font-size:0.55rem;color:#787878;letter-spacing:1px;text-align:center">
-  <span style="color:#c9a84c">v2025-05-14</span> · Top10-Scores mit Zettel gespeichertx: Speichern beim Endscreen
+  <span style="color:#c9a84c">v2025-05-14b</span> · Zettel ansehen + Tab-Togglex: Speichern beim Endscreen
 </div>
 <h1>CR-KNIFFEL</h1>
 <p class="subtitle" id="modus-subtitle">Crossroads Edition</p>
@@ -241,6 +241,34 @@
     <div class="runden-untertitel">ENDABRECHNUNG</div>
     <div id="end-ranking" style="margin-bottom:16px;"></div>
     <button class="btn btn-primary" onclick="zurueckZumLogin()">Neues Spiel</button>
+  </div>
+</div>
+
+<!-- ZETTEL-SCREEN -->
+<div id="zettel-screen" style="display:none;max-width:440px;margin:20px auto;">
+  <div style="background:#111;border:1px solid #333;border-radius:12px;padding:16px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:var(--gold);letter-spacing:2px;" id="zettel-name">NAME</div>
+        <div style="font-size:0.6rem;color:var(--grau);letter-spacing:1px;" id="zettel-info">Solo · Datum</div>
+      </div>
+      <button class="btn btn-klein" onclick="schliesseZettel()">← Zurück</button>
+    </div>
+    <div class="spielfeld-container">
+      <table class="kniffel" id="zettel-tabelle">
+        <thead>
+          <tr>
+            <th style="text-align:left;padding-left:8px;background:#555;">Kategorie</th>
+            <th class="th-0">Frei<br><small style="font-size:0.6rem;font-family:'IBM Plex Mono'">×1</small></th>
+            <th class="th-1">↓<br><small style="font-size:0.6rem;font-family:'IBM Plex Mono'">×2</small></th>
+            <th class="th-2">↑<br><small style="font-size:0.6rem;font-family:'IBM Plex Mono'">×2</small></th>
+            <th class="th-3">Hand<br><small style="font-size:0.6rem;font-family:'IBM Plex Mono'">×3</small></th>
+          </tr>
+        </thead>
+        <tbody id="zettel-body"></tbody>
+      </table>
+    </div>
+    <div style="text-align:center;margin-top:12px;font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:var(--gold);" id="zettel-punkte"></div>
   </div>
 </div>
 
@@ -599,7 +627,7 @@ function aktualisiereSpielUI() {
     const btn=document.createElement('button');
     btn.className='spieler-tab'+(id===anzeigeSpielerId?' aktiv':'')+(hatEingetragen?' fertig':'');
     btn.textContent=(id===meinId?'':' 👁 ')+sp.name+(id===meinId?' (du)':'')+(hatEingetragen?' ✓':'');
-    btn.onclick=()=>{anzeigeSpielerId=id;aktualisiereSpielUI();};
+    btn.onclick=()=>{ if(anzeigeSpielerId===id && id!==meinId){ anzeigeSpielerId=meinId; } else { anzeigeSpielerId=id; } aktualisiereSpielUI(); };
     tabs.appendChild(btn);
   }
 
@@ -950,7 +978,7 @@ window.zurueckZumLogin=async function(){
     }
   }
 
-  ['spiel-screen','warte-screen','runden-screen','end-screen'].forEach(id=>document.getElementById(id).style.display='none');
+  ['spiel-screen','warte-screen','runden-screen','end-screen','zettel-screen'].forEach(id=>document.getElementById(id).style.display='none');
   document.getElementById('login-screen').style.display='block';
   const rlBox2=document.getElementById('rl-box'); if(rlBox2) rlBox2.style.display='block';
   document.getElementById('spielende').classList.remove('sichtbar');
@@ -959,6 +987,77 @@ window.zurueckZumLogin=async function(){
 };
 
 // Score speichern
+window.zeigeZettel = async function(key) {
+  try {
+    const snap = await get(ref(db, 'scores/' + key));
+    if (!snap.exists()) return;
+    const score = snap.val();
+    document.getElementById('zettel-name').textContent = score.name;
+    const datum = score.datum ? new Date(score.datum).toLocaleDateString('de-DE') : '';
+    const typ = score.typ === 'multi' ? 'Mehrspieler' : 'Einzelspieler*in';
+    document.getElementById('zettel-info').textContent = typ + ' · ' + datum + ' · ' + score.punkte + ' Punkte';
+    document.getElementById('zettel-punkte').textContent = score.punkte + ' Punkte';
+
+    // Spielfeld rendern
+    const erg = score.ergebnisse || {};
+    const tbody = document.getElementById('zettel-body');
+    tbody.innerHTML = '';
+    const KATS = [{name:'Einser'},{name:'Zweier'},{name:'Dreier'},{name:'Vierer'},{name:'Fünfer'},{name:'Sechser'},{name:'Dreierpasch'},{name:'Viererpasch'},{name:'Full House'},{name:'Kl. Straße'},{name:'Gr. Straße'},{name:'Kniffel'},{name:'Chance'}];
+
+    // Oberer Teil
+    const trO = document.createElement('tr'); trO.className='trenner';
+    trO.innerHTML='<td colspan="5">▸ OBERER TEIL</td>'; tbody.appendChild(trO);
+    for(let r=0;r<=5;r++) tbody.appendChild(zettelZeile(r, erg, KATS));
+
+    // Bonus
+    const trB = document.createElement('tr'); trB.className='summen-zeile';
+    trB.innerHTML = '<td class="kategorie">Bonus (≥63→+35)</td>' + [0,1,2,3].map(s => {
+      let diff=0, hat=false;
+      for(let r=0;r<=5;r++){const k=r+'_'+s;if(erg[k]!==undefined){hat=true;diff+=erg[k]-(3*(r+1));}}
+      const oben=[0,1,2,3,4,5].reduce((a,r)=>{const k=r+'_'+s;return a+(erg[k]||0);},0);
+      let txt,col;
+      if(oben>=63){txt='+35 ✓';col='var(--gruen)';}
+      else if(!hat){txt='·';col='#bbb';}
+      else{txt=diff>=0?'+'+diff:''+diff;col=diff>=0?'var(--gruen)':'var(--rot)';}
+      return `<td class="feld"><span style="color:${col};font-size:0.65rem;font-weight:700">${txt}</span></td>`;
+    }).join('');
+    tbody.appendChild(trB);
+
+    const trU = document.createElement('tr'); trU.className='trenner';
+    trU.innerHTML='<td colspan="5">▸ UNTERER TEIL</td>'; tbody.appendChild(trU);
+    for(let r=6;r<=12;r++) tbody.appendChild(zettelZeile(r, erg, KATS));
+
+    // Screens umschalten
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('rl-box').style.display='none';
+    document.getElementById('zettel-screen').style.display='block';
+  } catch(e) { console.log('Fehler:', e); }
+};
+
+function zettelZeile(reihe, erg, KATS) {
+  const tr = document.createElement('tr');
+  const tdN = document.createElement('td'); tdN.className='kategorie'; tdN.textContent=KATS[reihe].name; tr.appendChild(tdN);
+  for(let spalte=0;spalte<=3;spalte++){
+    const td=document.createElement('td'); td.className='feld';
+    const span=document.createElement('span'); span.className='feld-wert';
+    const key=reihe+'_'+spalte;
+    if(erg[key]!==undefined){
+      span.classList.add('besetzt');
+      const v=erg[key];
+      if(reihe<=5){const d=v-(3*(reihe+1));span.textContent=d>=0?'+'+d:''+d;span.classList.add(d>=0?'positiv':'negativ');}
+      else{span.textContent=v===0?'X':v;if(v>0)span.classList.add('positiv');}
+    } else { span.textContent='·'; }
+    td.appendChild(span); tr.appendChild(td);
+  }
+  return tr;
+}
+
+window.schliesseZettel = function() {
+  document.getElementById('zettel-screen').style.display='none';
+  document.getElementById('login-screen').style.display='block';
+  document.getElementById('rl-box').style.display='block';
+};
+
 window.rlTab = function(typ) {
   document.getElementById('rl-tab-solo').className = 'rl-tab aktiv';
   ladeRangliste(typ);
@@ -983,7 +1082,9 @@ async function ladeRangliste(typ) {
       const platz = i === 0 ? '🏆' : (i+1)+'.';
       const platzColor = i === 0 ? '#c9a84c' : '#787878';
       const datum = e.datum ? new Date(e.datum).toLocaleDateString('de-DE') : '';
-      div.innerHTML = `<span style="font-family:'Bebas Neue',sans-serif;font-size:1rem;width:24px;color:${platzColor}">${platz}</span><span style="flex:1;font-weight:700">${e.name}</span><span style="font-size:0.55rem;color:#787878">${datum}</span><span style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;margin-left:8px">${e.punkte}</span>`;
+      const typBadge = e.typ === 'multi' ? '<span style="font-size:0.5rem;background:#4a5c7c;color:white;padding:1px 4px;border-radius:3px;margin-left:4px">MP</span>' : '';
+      const hatZettel = e.ergebnisse && Object.keys(e.ergebnisse).length > 0;
+      div.innerHTML = `<span style="font-family:'Bebas Neue',sans-serif;font-size:1rem;width:24px;color:${platzColor}">${platz}</span><span style="flex:1;font-weight:700;${hatZettel?'cursor:pointer;text-decoration:underline;color:var(--gold)':''}" ${hatZettel?`onclick="zeigeZettel('${e.key}')"`:''}>${e.name}${typBadge}</span><span style="font-size:0.55rem;color:#787878">${datum}</span><span style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;margin-left:8px">${e.punkte}</span>`;
       inhalt.appendChild(div);
     });
   } catch(err) {
@@ -1000,6 +1101,7 @@ async function speichereScore(punkte, typ) {
       snap.forEach(child => {
         alleScores.push({ key: child.key, ...child.val() });
       });
+    // Keys auch in top10 übernehmen
     }
 
     // Sind wir in den Top 10?
