@@ -177,7 +177,7 @@
 <body>
 
 <div style="max-width:400px;margin:0 auto 8px;background:#111;border:1px solid #333;border-radius:6px;padding:4px 10px;font-size:0.55rem;color:#787878;letter-spacing:1px;text-align:center">
-  <span style="color:#c9a84c">v2025-05-14e</span> · Multi-Score fix + Ranglistex: Speichern beim Endscreen
+  <span style="color:#c9a84c">v2025-05-14f</span> · Ragequit-Runden-Fixx: Speichern beim Endscreen
 </div>
 <h1>CR-KNIFFEL</h1>
 <p class="subtitle" id="modus-subtitle">Crossroads Edition</p>
@@ -814,7 +814,8 @@ async function pruefeRundeBeendet(meineNeueErg, runde) {
   const spieler=stand.spieler||{};
   const rundenZuege=stand.rundenZuege?.[runde]||{};
   const anzSpieler=Object.keys(spieler).length;
-  const anzFertig=Object.keys(rundenZuege).length;
+  // Nur echte Einträge zählen (keine verlassen-Marker, nur aktive Spieler)
+  const anzFertig=Object.keys(rundenZuege).filter(id => spieler[id] && !rundenZuege[id].verlassen).length;
   if(anzFertig<anzSpieler)return;
 
   const gesamtFelder=13*4;
@@ -973,10 +974,7 @@ window.zurueckZumLogin=async function(){
         const runde = spielstand.runde || 1;
         const updates = {};
         updates['spieler/'+meinId] = null; // entfernen
-        // Falls wir diese Runde noch nicht eingetragen haben, 0 eintragen damit Runde nicht blockiert
-        if(!spielstand.rundenZuege?.[runde]?.[meinId]) {
-          updates['rundenZuege/'+runde+'/'+meinId] = {reihe:-1, spalte:-1, punkte:0, verlassen:true};
-        }
+        // Verlassen-Marker nicht mehr nötig - pruefeRundeBeendet prüft nur noch aktive Spieler
         // Neue Reihenfolge ohne uns
         const neueReihenfolge = (spielstand.reihenfolge||[]).filter(id=>id!==meinId);
         updates['reihenfolge'] = neueReihenfolge;
