@@ -177,7 +177,7 @@
 <body>
 
 <div style="max-width:400px;margin:0 auto 8px;background:#111;border:1px solid #333;border-radius:6px;padding:4px 10px;font-size:0.55rem;color:#787878;letter-spacing:1px;text-align:center">
-  <span style="color:#c9a84c">v2025-05-10f</span> · Anzahl in Rundenauswertungx: Speichern beim Endscreen
+  <span style="color:#c9a84c">v2025-05-10g</span> · Gendern komplettx: Speichern beim Endscreen
 </div>
 <h1>CR-KNIFFEL</h1>
 <p class="subtitle" id="modus-subtitle">Crossroads Edition</p>
@@ -189,7 +189,7 @@
     <label class="login-label">Dein Name</label>
     <input class="login-input" type="text" id="input-name" placeholder="MAX" maxlength="16">
   </div>
-  <button class="btn btn-primary" onclick="soloStarten()">▶ Einzelspieler</button>
+  <button class="btn btn-primary" onclick="soloStarten()">▶ Einzelspieler*in</button>
   <div class="login-trenner">— oder Mehrspieler —</div>
   <button class="btn btn-primary" onclick="raumErstellen()">🎲 Neuen Raum erstellen</button>
   <div class="login-gruppe" style="margin-top:12px">
@@ -355,7 +355,7 @@ window.soloStarten = function() {
   meinName=name; meinId='solo'; soloModus=true; raumCode='';
   spielstand = { spieler:{solo:{name:meinName,ergebnisse:{}}}, runde:1, gestartet:true, beendet:false, rundenZuege:{} };
   anzeigeSpielerId='solo'; ichHabeEingetragen=false; letzteRundenNr=1;
-  document.getElementById('modus-subtitle').textContent='Einzelspieler';
+  document.getElementById('modus-subtitle').textContent='Einzelspieler*in';
   zeigeSpielScreen();
 };
 
