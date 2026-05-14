@@ -177,7 +177,7 @@
 <body>
 
 <div style="max-width:400px;margin:0 auto 8px;background:#111;border:1px solid #333;border-radius:6px;padding:4px 10px;font-size:0.55rem;color:#787878;letter-spacing:1px;text-align:center">
-  <span style="color:#c9a84c">v2025-05-14d</span> · Zettel-Key fixx: Speichern beim Endscreen
+  <span style="color:#c9a84c">v2025-05-14e</span> · Multi-Score fix + Ranglistex: Speichern beim Endscreen
 </div>
 <h1>CR-KNIFFEL</h1>
 <p class="subtitle" id="modus-subtitle">Crossroads Edition</p>
@@ -203,7 +203,7 @@
 <!-- RANGLISTE -->
 <div id="rl-box" style="max-width:400px;margin:12px auto 0;">
   <div style="display:flex;gap:6px;margin-bottom:8px;">
-    <button class="rl-tab aktiv" id="rl-tab-solo" onclick="rlTab('solo')">🎯 Solo Top 10</button>
+    <button class="rl-tab aktiv" id="rl-tab-solo" onclick="rlTab('solo')">🏆 Rangliste</button>
   </div>
   <div id="rl-inhalt"></div>
 </div>
@@ -903,7 +903,16 @@ function aktualisiereAnzeige(){
 }
 
 function zeigeSpielEnde(){
-  // Multi-Score deaktiviert
+  // Score speichern - jeder Spieler speichert seinen eigenen Score
+  if(!window._scoreSaved) {
+    window._scoreSaved = true;
+    const meineErg = soloModus
+      ? (spielstand?.spieler?.solo?.ergebnisse || {})
+      : getErgebnisse(meinId);
+    const gp = [0,1,2,3].reduce((a,s)=>a+berechneSpalte(meineErg,s),0);
+    const typ = soloModus ? 'solo' : 'multi';
+    speichereScore(gp, typ);
+  }
   // Alle Screens ausblenden, End-Screen zeigen
   document.getElementById('spiel-screen').style.display='none';
   document.getElementById('runden-screen').style.display='none';
@@ -1071,7 +1080,7 @@ async function ladeRangliste(typ) {
     const snap = await get(ref(db, 'scores'));
     if (!snap.exists()) { inhalt.innerHTML = '<div style="color:#787878;font-size:0.65rem;text-align:center;padding:12px">Noch keine Einträge!</div>'; return; }
     const alle = [];
-    snap.forEach(child => { const d = child.val(); if (d.typ === typ) alle.push({key: child.key, ...d}); });
+    snap.forEach(child => { const d = child.val(); alle.push({key: child.key, ...d}); });
     alle.sort((a,b) => b.punkte - a.punkte);
     const top10 = alle.slice(0, 10);
     if (top10.length === 0) { inhalt.innerHTML = '<div style="color:#787878;font-size:0.65rem;text-align:center;padding:12px">Noch keine Einträge!</div>'; return; }
