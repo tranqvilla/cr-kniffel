@@ -177,7 +177,7 @@
 <body>
 
 <div style="max-width:400px;margin:0 auto 8px;background:#111;border:1px solid #333;border-radius:6px;padding:4px 10px;font-size:0.55rem;color:#787878;letter-spacing:1px;text-align:center">
-  <span style="color:#c9a84c">v2025-05-10e</span> · Ragequit, Gendern, Rundenanzeigex: Speichern beim Endscreen
+  <span style="color:#c9a84c">v2025-05-10f</span> · Anzahl in Rundenauswertungx: Speichern beim Endscreen
 </div>
 <h1>CR-KNIFFEL</h1>
 <p class="subtitle" id="modus-subtitle">Crossroads Edition</p>
@@ -503,6 +503,15 @@ function zeigeRundenAuswertung(stand, rundeNr) {
     const istRauf=zug.spalte===2;
     const pk=mitFaktor>=100?'super':(mitFaktor>0?'gut':'schlecht');
     const kat=KATEGORIEN[zug.reihe]?.name||'?';
+    // Für oberen Teil (Einser-Sechser): Anzahl anzeigen
+    let katLabel = kat;
+    if(zug.reihe <= 5 && zug.punkte > 0) {
+      const anzahl = Math.round(zug.punkte / (zug.reihe + 1));
+      const wort = ['Einer','Zweier','Dreier','Vierer','Fünfer','Sechser'][zug.reihe];
+      katLabel = anzahl + ' ' + wort;
+    } else if(zug.reihe <= 5 && zug.punkte === 0) {
+      katLabel = '0 ' + ['Einer','Zweier','Dreier','Vierer','Fünfer','Sechser'][zug.reihe];
+    }
     // Spalten-Badge
     let badge='';
     if(istHand) badge='<span style="background:#c9a84c;color:#1a1a1a;font-size:0.6rem;padding:2px 6px;border-radius:10px;margin-left:6px;letter-spacing:1px;font-weight:900">HAND ×3</span>';
@@ -521,7 +530,7 @@ function zeigeRundenAuswertung(stand, rundeNr) {
     }
     const nameGroesse=istHand?'0.95rem':'0.8rem';
     const nameGewicht=istHand?'900':'700';
-    div.innerHTML=`<span class="runden-zug-punkte ${pk}">${mitFaktor>0?'+':''}${mitFaktor}</span><span class="runden-zug-name" style="font-size:${nameGroesse};font-weight:${nameGewicht}">${name}</span>${badge}<br><span class="runden-zug-info">${kat}</span>${bonusZeile}`;
+    div.innerHTML=`<span class="runden-zug-punkte ${pk}">${mitFaktor>0?'+':''}${mitFaktor}</span><span class="runden-zug-name" style="font-size:${nameGroesse};font-weight:${nameGewicht}">${name}</span>${badge}<br><span class="runden-zug-info">${katLabel}</span>${bonusZeile}`;
     zuegeDiv.appendChild(div);
   }
 
