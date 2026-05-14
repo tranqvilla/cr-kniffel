@@ -177,7 +177,7 @@
 <body>
 
 <div style="max-width:400px;margin:0 auto 8px;background:#111;border:1px solid #333;border-radius:6px;padding:4px 10px;font-size:0.55rem;color:#787878;letter-spacing:1px;text-align:center">
-  <span style="color:#c9a84c">v2025-05-10d</span> · Multi-Highscore deaktiviertx: Speichern beim Endscreen
+  <span style="color:#c9a84c">v2025-05-10e</span> · Ragequit, Gendern, Rundenanzeigex: Speichern beim Endscreen
 </div>
 <h1>CR-KNIFFEL</h1>
 <p class="subtitle" id="modus-subtitle">Crossroads Edition</p>
@@ -213,10 +213,10 @@
   <div class="login-titel">Warteraum</div>
   <div class="raum-info">Teile diesen Code mit deinen Mitspielern:</div>
   <div class="raum-code" id="anzeige-raumcode">----</div>
-  <div class="raum-info" id="spieler-anzahl-info">1 Spieler verbunden</div>
+  <div class="raum-info" id="spieler-anzahl-info">1 Spieler*innen verbunden</div>
   <ul class="spieler-liste" id="warte-spieler-liste"></ul>
   <button class="btn btn-primary" id="btn-spiel-starten" onclick="spielStarten()" style="display:none">🎲 Spiel starten!</button>
-  <div class="raum-info" id="warte-info">Warte auf Mitspieler...</div>
+  <div class="raum-info" id="warte-info">Warte auf Mitspieler*innen...</div>
   <button class="btn btn-secondary" style="margin-top:12px" onclick="zurueckZumLogin()">← Zurück</button>
 </div>
 
@@ -267,7 +267,7 @@
   <div class="wuerfel-bereich" id="wuerfel-bereich">
     <div class="wuerfel-reihe" id="wuerfel-reihe"></div>
     <div class="steuerung">
-      <button class="btn btn-klein" onclick="zurueckZumLogin()">✕</button>
+      <div style="text-align:center"><div style="font-size:0.5rem;color:var(--grau);letter-spacing:1px;margin-bottom:2px">Ragequit</div><button class="btn btn-klein" onclick="zurueckZumLogin()">✕</button></div>
       <button class="btn btn-wuerfeln" id="btn-wuerfeln" onclick="wuerfeln()">🎲 Würfeln</button>
       <div class="wurf-anzeige" id="wurf-anzeige">— / 3</div>
     </div>
@@ -409,7 +409,7 @@ function warteRaumBeobachten() {
     if (liste && document.getElementById('warte-screen').style.display!='none') {
       liste.innerHTML='';
       const spieler=daten.spieler||{};
-      document.getElementById('spieler-anzahl-info').textContent=Object.keys(spieler).length+' Spieler verbunden';
+      document.getElementById('spieler-anzahl-info').textContent=Object.keys(spieler).length+' Spieler*innen verbunden';
       for (const [id,sp] of Object.entries(spieler)) {
         const li=document.createElement('li');
         if(id===meinId)li.classList.add('ich');
@@ -594,10 +594,32 @@ function aktualisiereSpielUI() {
     tabs.appendChild(btn);
   }
 
-  // Rundenanzeige: 52 Runden total (13 Kategorien x 4 Spalten)
+  // Rundenanzeige
   const aktRunde = spielstand.runde||1;
   const rundenAnz = document.getElementById('runden-anzeige');
-  if(rundenAnz) rundenAnz.textContent = 'RUNDE ' + Math.min(aktRunde, 52) + ' VON 52';
+  if(rundenAnz) {
+    // Letzte Runde anzeigen mit was eingetragen wurde
+    const letzteRunde = aktRunde - 1;
+    const letzteZuege = spielstand.rundenZuege?.[letzteRunde] || {};
+    const KATNAMEN = ['Einser','Zweier','Dreier','Vierer','Fünfer','Sechser','Dreierpasch','Viererpasch','Full House','Kl. Straße','Gr. Straße','Kniffel','Chance'];
+    const ANZAHL_LABEL = ['','1 Einer','2 Zweier','3 Dreier','4 Vierer','5 Fünfer','6 Sechser','','','','','','',''];
+    let letzteInfo = '';
+    for(const [id, zug] of Object.entries(letzteZuege)) {
+      if(id === meinId && zug.reihe >= 0) {
+        const kat = KATNAMEN[zug.reihe] || '';
+        // Für oberen Teil: Anzahl anzeigen
+        if(zug.reihe <= 5 && zug.punkte > 0) {
+          const anzahl = zug.punkte / (zug.reihe + 1);
+          const wort = ['Einer','Zweier','Dreier','Vierer','Fünfer','Sechser'][zug.reihe];
+          letzteInfo = anzahl + ' ' + wort;
+        } else {
+          letzteInfo = kat;
+        }
+      }
+    }
+    const rundenText = 'RUNDE ' + Math.min(aktRunde, 52) + ' VON 52' + (letzteInfo ? ' · ' + letzteInfo : '');
+    rundenAnz.textContent = rundenText;
+  }
 
   document.getElementById('punkte-name-label').textContent=spieler[anzeigeSpielerId]?.name||'';
   aktualisiereAnzeige();
