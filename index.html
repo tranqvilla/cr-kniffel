@@ -177,7 +177,7 @@
 <body>
 
 <div style="max-width:400px;margin:0 auto 8px;background:#111;border:1px solid #333;border-radius:6px;padding:4px 10px;font-size:0.55rem;color:#787878;letter-spacing:1px;text-align:center">
-  <span style="color:#c9a84c">v2025-05-14c</span> · Zettel-Klick fixx: Speichern beim Endscreen
+  <span style="color:#c9a84c">v2025-05-14d</span> · Zettel-Key fixx: Speichern beim Endscreen
 </div>
 <h1>CR-KNIFFEL</h1>
 <p class="subtitle" id="modus-subtitle">Crossroads Edition</p>
@@ -1071,7 +1071,7 @@ async function ladeRangliste(typ) {
     const snap = await get(ref(db, 'scores'));
     if (!snap.exists()) { inhalt.innerHTML = '<div style="color:#787878;font-size:0.65rem;text-align:center;padding:12px">Noch keine Einträge!</div>'; return; }
     const alle = [];
-    snap.forEach(child => { const d = child.val(); if (d.typ === typ) alle.push(d); });
+    snap.forEach(child => { const d = child.val(); if (d.typ === typ) alle.push({key: child.key, ...d}); });
     alle.sort((a,b) => b.punkte - a.punkte);
     const top10 = alle.slice(0, 10);
     if (top10.length === 0) { inhalt.innerHTML = '<div style="color:#787878;font-size:0.65rem;text-align:center;padding:12px">Noch keine Einträge!</div>'; return; }
