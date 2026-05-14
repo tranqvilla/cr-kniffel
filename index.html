@@ -177,7 +177,7 @@
 <body>
 
 <div style="max-width:400px;margin:0 auto 8px;background:#111;border:1px solid #333;border-radius:6px;padding:4px 10px;font-size:0.55rem;color:#787878;letter-spacing:1px;text-align:center">
-  <span style="color:#c9a84c">v2025-05-10g</span> · Gendern komplettx: Speichern beim Endscreen
+  <span style="color:#c9a84c">v2025-05-14</span> · Top10-Scores mit Zettel gespeichertx: Speichern beim Endscreen
 </div>
 <h1>CR-KNIFFEL</h1>
 <p class="subtitle" id="modus-subtitle">Crossroads Edition</p>
@@ -993,7 +993,49 @@ async function ladeRangliste(typ) {
 
 async function speichereScore(punkte, typ) {
   try {
-    await push(ref(db, 'scores'), { name: meinName, punkte, typ, datum: Date.now() });
+    // Alle aktuellen Scores laden
+    const snap = await get(ref(db, 'scores'));
+    const alleScores = [];
+    if (snap.exists()) {
+      snap.forEach(child => {
+        alleScores.push({ key: child.key, ...child.val() });
+      });
+    }
+
+    // Sind wir in den Top 10?
+    alleScores.sort((a, b) => b.punkte - a.punkte);
+    const top10 = alleScores.slice(0, 10);
+    const schlechtesterTop10 = top10.length >= 10 ? top10[9].punkte : -1;
+
+    if (punkte <= schlechtesterTop10 && top10.length >= 10) {
+      // Nicht gut genug für Top 10
+      return;
+    }
+
+    // Kompletten Zettel speichern
+    const meineErg = soloModus
+      ? spielstand?.spieler?.solo?.ergebnisse || {}
+      : getErgebnisse(meinId);
+
+    const neuerEintrag = {
+      name: meinName,
+      punkte,
+      typ,
+      datum: Date.now(),
+      ergebnisse: meineErg,
+    };
+
+    // Neuen Score eintragen
+    await push(ref(db, 'scores'), neuerEintrag);
+
+    // Wenn jetzt mehr als 10: schlechtesten löschen
+    if (top10.length >= 10) {
+      // Den schlechtesten der alten Top10 löschen
+      const zuLoeschen = alleScores.find(s => s.punkte === schlechtesterTop10 && s.key);
+      if (zuLoeschen) {
+        await remove(ref(db, 'scores/' + zuLoeschen.key));
+      }
+    }
   } catch(e) { console.log('Score speichern fehlgeschlagen:', e); }
 }
 
