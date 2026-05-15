@@ -177,7 +177,7 @@
 <body>
 
 <div style="max-width:400px;margin:0 auto 8px;background:#111;border:1px solid #333;border-radius:6px;padding:4px 10px;font-size:0.55rem;color:#787878;letter-spacing:1px;text-align:center">
-  <span style="color:#c9a84c">v2025-05-14f</span> · Ragequit-Runden-Fixx: Speichern beim Endscreen
+  <span style="color:#c9a84c">v2025-05-15b</span> · Endscreen-Button speichert Scorex: Speichern beim Endscreen
 </div>
 <h1>CR-KNIFFEL</h1>
 <p class="subtitle" id="modus-subtitle">Crossroads Edition</p>
@@ -240,7 +240,7 @@
     <div class="runden-titel">🏆 SPIEL BEENDET!</div>
     <div class="runden-untertitel">ENDABRECHNUNG</div>
     <div id="end-ranking" style="margin-bottom:16px;"></div>
-    <button class="btn btn-primary" onclick="zurueckZumLogin()">Neues Spiel</button>
+    <button class="btn btn-primary" onclick="zurueckZumLogin()">💾 Speichern &amp; zurück zum Start</button>
   </div>
 </div>
 
@@ -904,7 +904,7 @@ function aktualisiereAnzeige(){
 }
 
 function zeigeSpielEnde(){
-  // Score speichern - jeder Spieler speichert seinen eigenen Score
+  // Score speichern wenn Endscreen erscheint - jeder für sich
   if(!window._scoreSaved) {
     window._scoreSaved = true;
     const meineErg = soloModus
